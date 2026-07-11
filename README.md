@@ -28,7 +28,7 @@ Este proyecto separa claramente:
 ## ⚡ Instalación (One-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fdomerlo/infra-dev-env/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/fdomerlo/fedora-dev-env/main/bootstrap.sh | bash
 ````
 
 ---
@@ -38,7 +38,7 @@ curl -fsSL https://raw.githubusercontent.com/fdomerlo/infra-dev-env/main/bootstr
 Revisar antes de ejecutar:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fdomerlo/infra-dev-env/main/bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/fdomerlo/fedora-dev-env/main/bootstrap.sh
 ```
 
 ---
@@ -46,8 +46,8 @@ curl -fsSL https://raw.githubusercontent.com/fdomerlo/infra-dev-env/main/bootstr
 ## ⚙️ Instalación manual
 
 ```bash
-git clone https://github.com/fdomerlo/infra-dev-env.git
-cd infra-dev-env
+git clone https://github.com/fdomerlo/fedora-dev-env.git
+cd fedora-dev-env
 ./install.sh
 ```
 
@@ -56,7 +56,7 @@ cd infra-dev-env
 ## 🤖 Modo no interactivo (CI / power users)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fdomerlo/infra-dev-env/main/bootstrap.sh | NON_INTERACTIVE=true bash
+curl -fsSL https://raw.githubusercontent.com/fdomerlo/fedora-dev-env/main/bootstrap.sh | NON_INTERACTIVE=true bash
 ```
 
 ---
