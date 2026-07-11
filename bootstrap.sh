@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="https://github.com/fdomerlo/infra-dev-env.git"
+REPO_URL="https://github.com/fdomerlo/fedora-dev-env.git"
 TARGET="$HOME/.infra-dev-env"
 
 echo "==> Bootstrapping infra-dev-env"
