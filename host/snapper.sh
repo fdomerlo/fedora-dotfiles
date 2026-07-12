@@ -3,8 +3,13 @@ set -euo pipefail
 
 [[ $EUID -eq 0 ]] || { echo "Run as root"; exit 1; }
 
-echo "==> Enabling BTRFS quota"
-btrfs quota enable / || true
+# En Fedora, habilitar las cuotas de BTRFS degrada drásticamente 
+# el rendimiento del sistema a medida que se acumulan snapshots. 
+# Cada vez que Snapper borra un snapshot antiguo, BTRFS recalcula los árboles de cuotas, 
+# provocando bloqueos temporales de E/S y picos masivos de CPU.
+# --------------------------------------------------------------
+# echo "==> Enabling BTRFS quota"
+# btrfs quota enable / || true
 
 echo "==> Configuring snapper (root)"
 
