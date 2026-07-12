@@ -4,7 +4,7 @@ set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo "Run as root"; exit 1; }
 
 SWAPFILE="/swapfile"
-SIZE="8G"   # ajustable según RAM
+SIZE="4G"   # ajustable según RAM
 
 echo "==> Creating swapfile ($SIZE)"
 
