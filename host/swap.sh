@@ -3,6 +3,10 @@ set -euo pipefail
 
 [[ $EUID -eq 0 ]] || { echo "Run as root"; exit 1; }
 
+# Nota: Fedora usa zram nativo, 
+# esto se usa para evitar un eventual OOM
+# ---------------------------------------
+
 SWAPFILE="/swapfile"
 SIZE="4G"   # ajustable según RAM
 
