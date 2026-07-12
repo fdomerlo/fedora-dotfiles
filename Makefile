@@ -29,7 +29,8 @@ host:
 	@echo "==> Configurando Host (Fedora)..."
 	bash host/setup.sh
 	bash host/snapper.sh
-	# Nota: host/swap.sh fue omitido intencionalmente (Fedora usa zram nativo)
+	# Nota: Fedora usa zram nativo, esto se usa para evitar un eventual OOM
+	bash host/swap.sh 
 
 # Fase 2: Entorno de usuario (Shell y Dotfiles)
 shell:
