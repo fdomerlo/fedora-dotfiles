@@ -28,7 +28,7 @@ Este proyecto separa claramente:
 ## ⚡ Instalación (One-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fdomerlo/fedora-dev-env/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/fdomerlo/fedora-dotfiles/main/bootstrap.sh | bash
 ````
 
 ---
