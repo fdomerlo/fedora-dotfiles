@@ -28,7 +28,7 @@ Este proyecto separa claramente:
 ## ⚡ Instalación (One-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fdomerlo/fedora-dotfiles/main/bootstrap.sh | bash
+sudo dnf install -y git make && git clone https://github.com/fdomerlo/fedora-dotfiles.git ~/.dotfiles && make -C ~/.dotfiles help
 ````
 
 ---
