@@ -14,24 +14,6 @@ require() {
 }
 
 # --------------------------------------------------
-# HOST
-# --------------------------------------------------
-
-host_setup() {
-  log "Setting up host"
-  sudo bash "$BASE_DIR/host/setup.sh"
-}
-
-host_swap() {
-  sudo bash "$BASE_DIR/host/swap.sh"
-}
-
-host_snapper() {
-  log "Configuring snapper"
-  sudo bash "$BASE_DIR/host/snapper.sh"
-}
-
-# --------------------------------------------------
 # BOXES (Dockerfile-based)
 # --------------------------------------------------
 
@@ -155,14 +137,6 @@ upgrade() {
 
 case "${1:-}" in
 
-host)
-  case "${2:-}" in
-    setup) host_setup ;;
-    snapper) host_snapper ;;
-    swap) host_swap ;;
-  esac
-  ;;
-
 box)
   case "${2:-}" in
     build) box_build "$3" ;;
@@ -189,7 +163,6 @@ upgrade) upgrade ;;
 
 *)
   echo "Usage:"
-  echo " devctl host setup"
   echo " devctl box build python"
   echo " devctl box create python"
   echo " devctl box enter python"
