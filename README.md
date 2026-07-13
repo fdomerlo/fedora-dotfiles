@@ -2,7 +2,7 @@
 ![platform](https://img.shields.io/badge/platform-linux-blue)
 ![shell](https://img.shields.io/badge/shell-zsh-green)
 
-# Fedora Development Environment
+# Fedora Dotfiles
 
 Aprovisionamiento de desarrollo portable basada en Fedora Workstation, Podman, Distrobox y virtualización ligera.
 
