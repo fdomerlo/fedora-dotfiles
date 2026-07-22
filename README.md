@@ -80,10 +80,7 @@ El comando `devctl doctor` realiza las siguientes validaciones automáticas sobr
 * Configuración de subvolúmenes BTRFS y Snapper.
 * Configuración y dimensionamiento de swap y zram.
 * Integridad de las Boxes de desarrollo instaladas en el host.
+
 ---
-
-## Contribuciones y Soporte
-
-Las contribuciones para mejorar los scripts, optimizar las Boxes o añadir soporte a nuevos entornos son bienvenidas. Consulta las pautas de desarrollo en nuestro archivo [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Si este entorno te ha sido de utilidad para simplificar tu flujo de trabajo diario, considera otorgarle una **estrella (★)** al repositorio. Esto ayuda a mejorar la visibilidad del proyecto para que otros desarrolladores puedan encontrarlo y beneficiarse de él.
