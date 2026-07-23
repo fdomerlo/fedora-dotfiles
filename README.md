@@ -10,22 +10,12 @@ Aprovisionamiento de desarrollo portable basada en Fedora Workstation, Podman, D
 * **Boxes:** Contenedores donde vive el entorno de desarrollo real y sus dependencias.
 * **Proyectos:** Directorios de trabajo locales mapeados de forma de desarrollo reproducible.
 
-## Instalacion
+## Instalacion (one-command install)
 
-### Opcion 1: Instalacion rapida (Recomendado)
 Asegura las dependencias base, clona el repositorio y despliega la ayuda interactiva del Makefile:
 
 ```bash
 sudo dnf install -y git make && git clone https://github.com/fdomerlo/fedora-dotfiles.git ~/.dotfiles && make -C ~/.dotfiles help
-```
-
-### Opcion 2: Instalacion manual
-
-Si prefieres inspeccionar el contenido localmente antes de ejecutar el despliegue:
-
-```bash
-git clone [https://github.com/fdomerlo/fedora-dotfiles.git](https://github.com/fdomerlo/fedora-dotfiles.git) ~/.dotfiles
-cd ~/.dotfiles
 ```
 
 ## Referencia de Comandos (devctl)
