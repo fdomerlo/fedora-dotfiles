@@ -27,7 +27,7 @@ if [ ! -d "$HOME/.sdkman" ]; then
     export SDKMAN_DIR="$HOME/.sdkman"
     curl -s "https://get.sdkman.io" | bash
 
-    source "$SDKMAN_DIR/bin/sdkman-init.sh"
+    # source "$SDKMAN_DIR/bin/sdkman-init.sh"
 fi
 
 echo "==> DevManagers ready"

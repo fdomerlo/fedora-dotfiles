@@ -47,3 +47,7 @@ PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
 
 # --- Carga segura del entorno local (ej. uv/cargo) ---
 [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/fdomerlo/.local/bin:$PATH"

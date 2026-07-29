@@ -18,11 +18,12 @@ help:
 	@echo "  make host       - Configura repositorios, DNF, paquetes base, Snapper y devtools"
 	@echo "  make shell      - Configura Zsh, Oh My Zsh y copia dotfiles"
 	@echo "  make devtools    - Instala herramientas de desarrollo y gestores de paquetes"
+	@echo "  make devai      - Instala herramientas de inteligencia artificial"
 	@echo "  make containers - Prepara el entorno de contenedores (Distrobox/Podman)"
 	@echo "  make clean      - Elimina archivos temporales de la instalación"
 
 # El comando maestro (Se ejecuta como usuario NORMAL)
-install: host shell devtools containers clean
+install: host shell devtools devai containers clean
 	@echo -e "\n✅ Instalación finalizada. Reinicia la terminal o el equipo para aplicar todos los cambios."
 
 # Sistema y Host (Pedirá sudo de manera selectiva)
