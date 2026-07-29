@@ -14,10 +14,10 @@ export CHSH=no
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de instalación:"
-	@echo "  make install    - Aprovisiona la estación de trabajo completa (Host + Shell + Dev)"
+	@echo "  make install    - Aprovisiona la estación de trabajo completa (host + shell + devtools + devai + containers)"
 	@echo "  make host       - Configura repositorios, DNF, paquetes base, Snapper y devtools"
 	@echo "  make shell      - Configura Zsh, Oh My Zsh y copia dotfiles"
-	@echo "  make devtools    - Instala herramientas de desarrollo y gestores de paquetes"
+	@echo "  make devtools   - Instala herramientas de desarrollo y gestores de paquetes"
 	@echo "  make devai      - Instala herramientas de inteligencia artificial"
 	@echo "  make containers - Prepara el entorno de contenedores (Distrobox/Podman)"
 	@echo "  make clean      - Elimina archivos temporales de la instalación"
