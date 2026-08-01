@@ -9,10 +9,11 @@ Aprovisionamiento automatizado de una estación de trabajo Fedora para desarroll
 ## Instalación (one-command)
 
 ```bash
-sudo dnf install -y git make && rm -r ~/.dotfiles \
+sudo dnf install -y git make && \
+rm -rf ~/.dotfiles && \
 git clone https://github.com/fdomerlo/fedora-dotfiles.git ~/.dotfiles && \
-cd ~/.dotfiles \
-make -C help
+cd ~/.dotfiles && \
+make help
 ```
 
 ## Makefile Targets
