@@ -17,9 +17,9 @@ help:
 	@echo "  make install    - Aprovisiona la estación de trabajo completa (host + shell + devtools + devai + containers)"
 	@echo "  make host       - Configura repositorios, DNF, paquetes base, Snapper y devtools"
 	@echo "  make shell      - Configura Zsh, Oh My Zsh y copia dotfiles"
+	@echo "  make containers - Prepara el entorno de contenedores (Distrobox/Podman)"
 	@echo "  make devtools   - Instala herramientas de desarrollo y gestores de paquetes"
 	@echo "  make devai      - Instala herramientas de inteligencia artificial"
-	@echo "  make containers - Prepara el entorno de contenedores (Distrobox/Podman)"
 	@echo "  make clean      - Elimina archivos temporales de la instalación"
 
 # El comando maestro (Se ejecuta como usuario NORMAL)
@@ -40,6 +40,17 @@ shell:
 	ln -sf $(PWD)/shell/zshrc $(HOME)/.zshrc
 	ln -sf $(PWD)/shell/gitconfig $(HOME)/.gitconfig
 
+# Tooling y Contenedores
+containers:
+	@echo "==> Preparando entorno de contenedores..."
+	chmod +x shell/devctl
+	mkdir -p $(HOME)/.local/bin
+	ln -sf $(PWD)/shell/devctl $(HOME)/.local/bin/devctl
+
+	@echo "Devctl listo. Usa:"
+	@echo "  ./devctl box create php"
+	@echo "  ./devctl box create python"
+
 # Entorno de desarrollo
 devtools:
 	@echo "==> Instalando devtools..."
@@ -52,17 +63,6 @@ devai:
 	curl -fsSL https://opencode.ai/install | bash
 	curl -fsSL https://antigravity.google/cli/install.sh | bash
 	bash scripts/setup_agy.sh
-
-# Tooling y Contenedores
-containers:
-	@echo "==> Preparando entorno de contenedores..."
-	chmod +x shell/devctl
-	mkdir -p $(HOME)/.local/bin
-	ln -sf $(PWD)/shell/devctl $(HOME)/.local/bin/devctl
-
-	@echo "Devctl listo. Usa:"
-	@echo "  ./devctl box create php"
-	@echo "  ./devctl box create python"
 
 # Utilidad para limpiar restos si algo falla
 clean:
