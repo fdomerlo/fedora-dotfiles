@@ -11,7 +11,7 @@ Aprovisionamiento automatizado de una estación de trabajo Fedora para desarroll
 ```bash
 sudo dnf install -y git make && \
 git clone https://github.com/fdomerlo/fedora-dotfiles.git ~/.dotfiles && \
-cd ~/.dotfiles
+cd ~/.dotfiles \
 make -C help
 ```
 
