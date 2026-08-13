@@ -62,6 +62,7 @@ devai:
 	@echo "==> Instalando herramientas de AI..."
 	curl -fsSL https://opencode.ai/install | bash
 	curl -fsSL https://antigravity.google/cli/install.sh | bash
+	curl -fsSL https://claude.ai/install.sh | bash
 	bash scripts/setup_agy.sh
 
 # Utilidad para limpiar restos si algo falla
