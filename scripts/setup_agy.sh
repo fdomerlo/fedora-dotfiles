@@ -81,7 +81,7 @@ sudo bash -c "cat <<EOF > /usr/share/applications/antigravity.desktop
 Name=Antigravity 2.0
 Comment=Orquestación asíncrona de agentes autónomos
 Exec=/usr/local/bin/antigravity
-Icon=$HOME/.dotfiles/scripts/antigravity.png
+Icon=$HOME/.local/share/applications/antigravity.png
 Type=Application
 Terminal=false
 Categories=Development;IDE;
@@ -92,7 +92,7 @@ sudo bash -c "cat <<EOF > /usr/share/applications/antigravity-ide.desktop
 Name=Antigravity IDE
 Comment=Entorno de desarrollo tradicional
 Exec=/usr/local/bin/antigravity-ide
-Icon=$HOME/.dotfiles/scripts/antigravity-ide.png
+Icon=/opt/$SUBDIR_IDE/$BIN_IDE/resources/app/resources/linux/code.png
 Type=Application
 Terminal=false
 Categories=Development;IDE;
