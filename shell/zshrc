@@ -43,7 +43,13 @@ zstyle ':vcs_info:git:*' formats ' (%b)'
 precmd() {
     vcs_info
 }
-PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
+
+if [ -n "$CONTAINER_ID" ]; then
+    # Usamos %1~ para mostrar solo el último directorio
+    PROMPT='📦[%F{yellow}$CONTAINER_ID%f] %F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
+else
+    PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
+fi
 
 # --- Carga segura del entorno local (ej. uv/cargo) ---
 [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
