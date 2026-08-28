@@ -24,7 +24,7 @@ help:
 	@echo "  make clean      - Elimina archivos temporales de la instalación"
 
 # El comando maestro (Se ejecuta como usuario NORMAL)
-install: host shell devtools devai containers clean
+install: host shell devtools devai containers tooling clean
 	@echo -e "\n✅ Instalación finalizada. Reinicia la terminal o el equipo para aplicar todos los cambios."
 
 # Sistema y Host (Pedirá sudo de manera selectiva)
