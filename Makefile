@@ -61,19 +61,12 @@ devtools:
 # Entornos AI 
 devai:
 	@echo "==> Instalando herramientas de AI..."
-	curl -fsSL https://opencode.ai/install | bash
-	curl -fsSL https://antigravity.google/cli/install.sh | bash
-	curl -fsSL https://claude.ai/install.sh | bash
-	bash scripts/setup_agy.sh
+	bash scripts/devai.sh
 
 # Tooling
 tooling:
-	sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc &&
-	echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
-	sudo dnf check-update
-	sudo dnf install code
-	curl -f https://zed.dev/install.sh | sh
-	sudo dnf install google-chrome-stable	
+	@echo "==> Instalando navegadores y editores..."
+	bash scripts/tooling.sh
 
 # Utilidad para limpiar restos si algo falla
 clean:
