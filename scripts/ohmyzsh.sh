@@ -28,11 +28,17 @@ mkdir -p "$PLUGINS_DIR"
 if [ ! -d "$PLUGINS_DIR/zsh-autosuggestions" ]; then
   echo "==> Cloning zsh-autosuggestions..."
   git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions "$PLUGINS_DIR/zsh-autosuggestions"
+else
+  echo "==> Updating zsh-autosuggestions..."
+  git -C "$PLUGINS_DIR/zsh-autosuggestions" pull
 fi
 
 if [ ! -d "$PLUGINS_DIR/zsh-syntax-highlighting" ]; then
   echo "==> Cloning zsh-syntax-highlighting..."
   git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting "$PLUGINS_DIR/zsh-syntax-highlighting"
+else
+  echo "==> Updating zsh-syntax-highlighting..."
+  git -C "$PLUGINS_DIR/zsh-syntax-highlighting" pull
 fi
 
 echo "==> Zsh & Oh My Zsh environment configuration completed"
