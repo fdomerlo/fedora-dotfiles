@@ -20,11 +20,13 @@ make help
 
 | Target | Descripción |
 |--------|-------------|
-| `make install` | Aprovisionamiento completo (host + shell + devtools + devai + containers) |
+| `make install` | Aprovisionamiento completo (host + shell + devtools + tooling + devai + desktop + containers) |
 | `make host` | Paquetes base, Podman, Distrobox, BTRFS, Snapper, swap |
 | `make shell` | Zsh, Oh My Zsh, plugins, `.zshrc`, `.gitconfig` |
 | `make devtools` | gh, uv, fnm, SDKMAN |
+| `make tooling` | Navegadores (Chrome) y editores (VS Code, Zed) |
 | `make devai` | OpenCode CLI, Antigravity CLI, Antigravity Core + IDE |
+| `make desktop` | Extensiones GNOME y configuración de tipografías |
 | `make containers` | Instala `devctl` en `~/.local/bin` |
 | `make clean` | Limpieza de caches y residuales |
 
@@ -32,7 +34,7 @@ make help
 
 ```
 host/              # Scripts de sistema (requieren sudo)
-├── setup.sh       #   Paquetes base: git, podman, distrobox, snapper, btrfs
+├── setup.sh       #   Paquetes base: git, fuentes, podman, distrobox, snapper, btrfs
 ├── snapper.sh     #   Configura Snapper con timeline BTRFS
 └── swap.sh        #   Swapfile de 4GB + swappiness 10
 
@@ -42,8 +44,10 @@ shell/             # Dotfiles y CLI
 └── devctl         #   CLI para boxes Distrobox y proyectos
 
 scripts/           # Instaladores
+├── desktop.sh     #   Configuración de fuentes y extensiones GNOME
 ├── ohmyzsh.sh     #   Instala Zsh, Oh My Zsh y plugins
 ├── devtools.sh    #   Instala gh, uv, fnm, SDKMAN
+├── tooling.sh     #   Instala VS Code, Zed y Chrome
 ├── setup_gh.sh    #   Configura SSH con GitHub (clave + login automático)
 └── setup_agy.sh   #   Despliega Antigravity Core + IDE en /opt/
 
@@ -100,6 +104,16 @@ Automatiza la configuración SSH con GitHub:
 4. Sube la clave pública a GitHub si no está registrada
 5. Configura `git config --global user` automáticamente
 6. Verifica conexión SSH
+
+### `scripts/desktop.sh`
+Configura las tipografías del sistema y automatiza la instalación y activación de extensiones GNOME:
+- **Tipografías:** Interfaz en Adwaita, Documentos en Noto Sans Regular 12, Monoespaciada en Fira Code 11.
+- **Extensiones:**
+  - `Alphabetical App Grid` (orden alfabético automático en la cuadrícula de aplicaciones)
+  - `Vitals` (monitoreo de recursos en el panel superior)
+  - `Dash to Dock` (dock personalizable en el escritorio)
+  - `Pop Shell` (gestor de ventanas con tiling avanzado)
+- Descarga e instala paquetes desde la API oficial de GNOME Extensions o paquetes RPM del sistema, compila esquemas GSettings y asegura compatibilidad con la versión de GNOME en ejecución.
 
 ### `scripts/setup_agy.sh`
 Despliega Antigravity Core y Antigravity IDE desde tarballs en `~/Descargas`:

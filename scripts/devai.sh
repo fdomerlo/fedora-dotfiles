@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if ! command -v opencode &> /dev/null; then
-    curl -fsSL https://opencode.ai/install | bash
+    curl -fsSL https://opencode.ai/v2/install | bash
 else
     echo "==> opencode is already installed"
 fi

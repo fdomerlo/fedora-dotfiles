@@ -10,8 +10,9 @@ dnf upgrade --refresh -y
 
 echo "==> Installing base packages"
 dnf install -y \
-  git curl wget \
-  fira-code-fonts zip unzip \
+  git curl wget jq \
+  fira-code-fonts google-noto-sans-vf-fonts zip unzip \
+  gnome-shell-extension-dash-to-dock gnome-shell-extension-pop-shell \
   podman podman-compose podman-docker \
   distrobox \
   btrfs-progs btrfs-assistant \
