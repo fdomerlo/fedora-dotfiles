@@ -121,8 +121,8 @@ install_extension "Vitals@CoreCoding.com" ""
 # 3) Dash to Dock (paquete oficial gnome-shell-extension-dash-to-dock)
 install_extension "dash-to-dock@micxgx.gmail.com" "gnome-shell-extension-dash-to-dock"
 
-# 4) Pop Shell (paquete oficial gnome-shell-extension-pop-shell)
-install_extension "pop-shell@system76.com" "gnome-shell-extension-pop-shell"
+# 4) Tiling Shell (de domferr)
+install_extension "tilingshell@ferrarodomenico.com" ""
 
 # ------------------------------------------------------------------------------
 # 4. Habilitar extensiones requeridas en GNOME
@@ -140,7 +140,7 @@ required = [
     "AlphabeticalAppGrid@stuarthayhurst",
     "Vitals@CoreCoding.com",
     "dash-to-dock@micxgx.gmail.com",
-    "pop-shell@system76.com"
+    "tilingshell@ferrarodomenico.com"
 ]
 
 try:
@@ -153,6 +153,11 @@ except Exception:
     current = []
 
 updated = list(current)
+
+# Remover pop-shell si estuviera en la lista activa para evitar conflictos de tiling
+if "pop-shell@system76.com" in updated:
+    updated.remove("pop-shell@system76.com")
+
 for ext in required:
     if ext not in updated:
         updated.append(ext)
@@ -165,8 +170,11 @@ else:
     print(f"    ✔ Todas las extensiones ya estaban registradas en GSettings.")
 EOF
 
+# Deshabilitar pop-shell para evitar conflictos si estuviera activa
+gnome-extensions disable "pop-shell@system76.com" 2>/dev/null || true
+
 # También invocar `gnome-extensions enable` para activación en caliente si la sesión está abierta
-for uuid in "AlphabeticalAppGrid@stuarthayhurst" "Vitals@CoreCoding.com" "dash-to-dock@micxgx.gmail.com" "pop-shell@system76.com"; do
+for uuid in "AlphabeticalAppGrid@stuarthayhurst" "Vitals@CoreCoding.com" "dash-to-dock@micxgx.gmail.com" "tilingshell@ferrarodomenico.com"; do
     gnome-extensions enable "$uuid" 2>/dev/null || true
 done
 

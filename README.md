@@ -112,7 +112,7 @@ Configura las tipografías del sistema y automatiza la instalación y activació
   - `Alphabetical App Grid` (orden alfabético automático en la cuadrícula de aplicaciones)
   - `Vitals` (monitoreo de recursos en el panel superior)
   - `Dash to Dock` (dock personalizable en el escritorio)
-  - `Pop Shell` (gestor de ventanas con tiling avanzado)
+  - `Tiling Shell` (gestor de ventanas y layouts de tiling avanzado)
 - Descarga e instala paquetes desde la API oficial de GNOME Extensions o paquetes RPM del sistema, compila esquemas GSettings y asegura compatibilidad con la versión de GNOME en ejecución.
 
 ### `scripts/setup_agy.sh`
