@@ -102,4 +102,7 @@ EOF"
 
 sudo update-desktop-database /usr/share/applications/
 
+# Eliminamos el zip de Anigravity
+sudo rm -rf "$ARCHIVO_APP"
+
 echo "=== Proceso finalizado ==="
