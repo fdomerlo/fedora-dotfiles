@@ -3,7 +3,8 @@ set -euo pipefail
 
 [[ $EUID -eq 0 ]] || { echo "Run as root"; exit 1; }
 
-USER_NAME="${SUDO_USER:-$(logname)}"
+TARGET_USER="${SUDO_USER:-$(logname)}"
+USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 
 echo "==> Updating system"
 dnf upgrade --refresh -y
@@ -18,7 +19,18 @@ dnf install -y \
   btrfs-progs btrfs-assistant \
   snapper python3-dnf-plugin-snapper
 
-echo "==> Enabling podman socket"
-systemctl enable --now podman.socket
+echo "==> Mitigating CoW for Containers (Wear Leveling Protection)"
+# Desactivar CoW antes de escribir datos (chattr +C solo afecta archivos nuevos)
+mkdir -p /var/lib/containers
+chattr +C /var/lib/containers || true
 
-echo "==> Done"
+mkdir -p "$USER_HOME/.local/share/containers"
+chattr +C "$USER_HOME/.local/share/containers" || true
+chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/.local"
+
+echo "==> Enabling Rootless Podman Socket for $TARGET_USER"
+loginctl enable-linger "$TARGET_USER"
+sudo -u "$TARGET_USER" XDG_RUNTIME_DIR="/run/user/$(id -u "$TARGET_USER")" \
+  systemctl --user enable --now podman.socket
+
+echo "==> Setup completed"
