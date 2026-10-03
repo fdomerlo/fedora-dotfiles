@@ -119,10 +119,8 @@ install_extension "AlphabeticalAppGrid@stuarthayhurst" ""
 install_extension "Vitals@CoreCoding.com" ""
 
 # 3) Dash to Dock (paquete oficial gnome-shell-extension-dash-to-dock)
-install_extension "dash-to-dock@micxgx.gmail.com" "gnome-shell-extension-dash-to-dock"
+install_extension "dash-to-dock@micxgx.gmail.com"
 
-# 4) Tiling Shell (de domferr)
-install_extension "tilingshell@ferrarodomenico.com" ""
 
 # ------------------------------------------------------------------------------
 # 4. Habilitar extensiones requeridas en GNOME
