@@ -1,36 +1,102 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-[[ $EUID -eq 0 ]] || { echo "Run as root"; exit 1; }
+if [[ $EUID -eq 0 ]]; then
+  echo "ERROR: Ejecutá este script como usuario normal (sin sudo)." >&2
+  echo "       El script solicitará privilegios con sudo únicamente si falta instalar paquetes." >&2
+  exit 1
+fi
 
-TARGET_USER="${SUDO_USER:-$(logname)}"
-USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
+if [[ -r /etc/os-release ]]; then
+  # shellcheck source=/dev/null
+  source /etc/os-release
+  if [[ "${ID:-}" != "fedora" ]]; then
+    echo "ERROR: Este aprovisionamiento de host está diseñado para Fedora (detectado: ${ID:-desconocido})." >&2
+    exit 1
+  fi
+else
+  echo "ERROR: No se pudo leer /etc/os-release." >&2
+  exit 1
+fi
 
-echo "==> Updating system"
-dnf upgrade --refresh -y
+# 1. Detectar el filesystem real antes de evaluar cualquier consideración de Btrfs
+ROOT_FS="$(findmnt -n -o FSTYPE -T / 2>/dev/null || echo "unknown")"
+HOME_FS="$(findmnt -n -o FSTYPE -T "$HOME" 2>/dev/null || echo "unknown")"
+HOME_OPTS="$(findmnt -n -o OPTIONS -T "$HOME" 2>/dev/null || echo "")"
 
-echo "==> Installing base packages"
-dnf install -y \
-  git curl wget jq \
-  fira-code-fonts google-noto-sans-vf-fonts zip unzip \
-  gnome-shell-extension-dash-to-dock \
-  podman podman-compose podman-docker \
-  distrobox \
-  btrfs-progs btrfs-assistant \
-  snapper python3-dnf-plugin-snapper
+echo "==> Filesystem detectado: / (${ROOT_FS}), \$HOME (${HOME_FS})"
+if [[ "$HOME_FS" == "btrfs" ]]; then
+  echo "    Opciones de montaje en \$HOME: ${HOME_OPTS}"
+fi
 
-echo "==> Mitigating CoW for Containers (Wear Leveling Protection)"
-# Desactivar CoW antes de escribir datos (chattr +C solo afecta archivos nuevos)
-mkdir -p /var/lib/containers
-chattr +C /var/lib/containers || true
+# 2. Instalar únicamente los paquetes base ausentes (sin dnf upgrade ni paquetes fuera de alcance)
+BASE_PACKAGES=(
+  git
+  curl
+  wget
+  jq
+  zip
+  unzip
+  podman
+  distrobox
+)
 
-mkdir -p "$USER_HOME/.local/share/containers"
-chattr +C "$USER_HOME/.local/share/containers" || true
-chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/.local"
+if [[ "$ROOT_FS" == "btrfs" || "$HOME_FS" == "btrfs" ]]; then
+  BASE_PACKAGES+=(btrfs-progs)
+fi
 
-echo "==> Enabling Rootless Podman Socket for $TARGET_USER"
-loginctl enable-linger "$TARGET_USER"
-sudo -u "$TARGET_USER" XDG_RUNTIME_DIR="/run/user/$(id -u "$TARGET_USER")" \
-  systemctl --user enable --now podman.socket
+MISSING_PACKAGES=()
+for pkg in "${BASE_PACKAGES[@]}"; do
+  if ! rpm -q "$pkg" &>/dev/null; then
+    MISSING_PACKAGES+=("$pkg")
+  fi
+done
 
-echo "==> Setup completed"
+if [[ ${#MISSING_PACKAGES[@]} -gt 0 ]]; then
+  echo "==> Instalando paquetes base faltantes: ${MISSING_PACKAGES[*]}"
+  sudo dnf install -y "${MISSING_PACKAGES[@]}"
+else
+  echo "==> Todos los paquetes base ya están instalados. Sin escrituras de DNF."
+fi
+
+# 3. Verificar zRAM nativo de Fedora (sin crear swapfiles ni alterar sysctl)
+echo "==> Verificando configuración nativa de zRAM..."
+if command -v zramctl &>/dev/null && zramctl --output NAME --noheadings 2>/dev/null | grep -q 'zram'; then
+  zramctl
+elif swapon --show=NAME --noheadings 2>/dev/null | grep -q 'zram'; then
+  swapon --show
+else
+  echo "ADVERTENCIA: No se detectó un dispositivo zRAM activo. Revisá zram-generator-defaults en Fedora." >&2
+fi
+
+# 4. Verificar Podman rootless y almacenamiento de contenedores
+echo "==> Verificando Podman rootless y almacenamiento de contenedores..."
+if ! command -v podman &>/dev/null; then
+  echo "ERROR: Podman no está disponible tras la verificación de paquetes." >&2
+  exit 1
+fi
+
+PODMAN_ROOTLESS="$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null || echo "unknown")"
+PODMAN_DRIVER="$(podman info --format '{{.Store.GraphDriverName}}' 2>/dev/null || echo "unknown")"
+PODMAN_GRAPHROOT="$(podman info --format '{{.Store.GraphRoot}}' 2>/dev/null || echo "unknown")"
+
+if [[ "$PODMAN_ROOTLESS" != "true" ]]; then
+  echo "ERROR: Podman no está operando en modo rootless (Rootless=${PODMAN_ROOTLESS})." >&2
+  exit 1
+fi
+
+echo "    Modo rootless:  ${PODMAN_ROOTLESS}"
+echo "    Storage driver: ${PODMAN_DRIVER}"
+echo "    GraphRoot:      ${PODMAN_GRAPHROOT}"
+
+if [[ "$PODMAN_GRAPHROOT" != "unknown" && -d "$PODMAN_GRAPHROOT" ]]; then
+  GRAPHROOT_FS="$(findmnt -n -o FSTYPE -T "$PODMAN_GRAPHROOT" 2>/dev/null || echo "$HOME_FS")"
+  echo "    Filesystem en GraphRoot: ${GRAPHROOT_FS}"
+fi
+
+# Nota técnica: Se conserva la configuración predeterminada de Podman rootless en Fedora
+# (overlay sobre Btrfs con compresión transparente zstd:1 y checksums de datos activos).
+# No se aplica chattr +C (NOCOW desactiva checksums y compresión zstd incrementando escrituras)
+# ni chown recursivo sobre ~/.local, ni se activa loginctl enable-linger.
+
+echo "==> Host Fedora verificado y listo."

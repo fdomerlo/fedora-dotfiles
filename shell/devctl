@@ -1,159 +1,101 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+REPO_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 
-log() { echo -e "\n==> $1"; }
+DEFAULT_BOX="debian-work"
+export DBX_CONTAINER_MANAGER=podman
 
-# --------------------------------------------------
-# HELPERS
-# --------------------------------------------------
-
-require() {
-  command -v "$1" >/dev/null || { echo "Missing: $1"; exit 1; }
+log() {
+  printf '\n==> %s\n' "$1"
 }
 
-# --------------------------------------------------
-# BOXES (Dockerfile-based)
-# --------------------------------------------------
-
-box_build() {
-  NAME="$1"
-  IMAGE="dev-$NAME"
-  log "Building image $IMAGE"
-  podman build -t "$IMAGE" "$BASE_DIR/boxes/$NAME"
+require() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "ERROR: Falta el comando requerido '$1'." >&2
+    exit 1
+  }
 }
 
 box_create() {
-  NAME="$1"
-  IMAGE="dev-$NAME"
-  log "Creating distrobox $NAME"
-  distrobox create \
-    --name "$IMAGE" \
-    --image "$IMAGE" \
-    --init-hooks "$BASE_DIR/boxes/$NAME/init.sh"
+  local name="${1:-$DEFAULT_BOX}"
+  BOX_NAME="$name" bash "$REPO_DIR/boxes/debian-work.sh"
 }
 
 box_enter() {
-  distrobox enter "dev-$1"
+  local name="${1:-$DEFAULT_BOX}"
+  require distrobox
+  exec distrobox enter "$name"
 }
 
-box_rebuild() {
-  NAME="$1"
-  log "Rebuilding $NAME"
-  distrobox rm -f "dev-$NAME" || true
-  podman rmi "dev-$NAME" || true
-  box_build "$NAME"
-  box_create "$NAME"
+box_list() {
+  require distrobox
+  distrobox list
 }
-
-box_export() {
-  NAME="$1"
-  FILE="$HOME/${NAME}.tar"
-  log "Exporting $NAME → $FILE"
-  podman save -o "$FILE" "dev-$NAME"
-}
-
-box_import() {
-  FILE="$1"
-  log "Importing from $FILE"
-  podman load -i "$FILE"
-}
-
-# --------------------------------------------------
-# PROJECTS
-# --------------------------------------------------
 
 project_init_django() {
-  log "Creating Django project"
+  log "Inicializando plantilla de proyecto Django en ./app"
 
   mkdir -p app
-  cp "$BASE_DIR/templates/django/"* app/
-  cp "$BASE_DIR/.envrc.template" .envrc
-  echo "Project ready → run: direnv allow"
+  # Copiar cada archivo de la plantilla solo si no existe (sin depender del código de salida de `cp -n`)
+  local src dst
+  for src in "$REPO_DIR/templates/django/"*; do
+    dst="app/$(basename "$src")"
+    if [[ -e "$dst" ]]; then
+      echo "    Se conserva el archivo existente: $dst"
+    else
+      cp "$src" "$dst"
+    fi
+  done
+  if [[ ! -f .envrc ]]; then
+    cp "$REPO_DIR/.envrc.template" .envrc
+  fi
+  echo "Proyecto preparado. Ejecutá: direnv allow (si usás direnv) o revisá ./app/manage.sh"
 }
-
-# --------------------------------------------------
-# TOOLS
-# --------------------------------------------------
 
 doctor() {
-  log "Running diagnostics..."
-
-  check() {
-    command -v "$1" >/dev/null && echo "✔ $1" || echo "✘ $1"
-  }
-
-  check git
-  check podman
-  check distrobox
-  check btrfs
-  check snapper
-
-  echo ""
-  echo "==> Swap"
-  swapon --show || echo "No swap active"
-
-  echo ""
-  echo "==> ZRAM"
-  zramctl || echo "No zram"
-
-  echo ""
-  echo "==> Boxes"
-  distrobox list || true
+  bash "$REPO_DIR/scripts/verify.sh"
 }
-
-upgrade() {
-  log "Updating infra-dev-env"
-
-  git -C "$BASE_DIR" pull
-
-  echo "Rebuild boxes? (y/n)"
-  read -r opt
-
-  if [[ "$opt" == "y" ]]; then
-    for box in python php; do
-      devctl box rebuild "$box"
-    done
-  fi
-}
-
-# --------------------------------------------------
-# COMMAND ROUTER
-# --------------------------------------------------
 
 case "${1:-}" in
-
-box)
-  case "${2:-}" in
-    build) box_build "$3" ;;
-    create) box_create "$3" ;;
-    enter) box_enter "$3" ;;
-    rebuild) box_rebuild "$3" ;;
-    export) box_export "$3" ;;
-    import) box_import "$3" ;;
-  esac
-  ;;
-
-project)
-  case "${2:-}" in
-    init)
-      case "${3:-}" in
-        django) project_init_django ;;
-      esac
-      ;;
-  esac
-  ;;
-
-doctor) doctor ;;
-upgrade) upgrade ;;
-
-*)
-  echo "Usage:"
-  echo " devctl box build python"
-  echo " devctl box create python"
-  echo " devctl box enter python"
-  echo " devctl box rebuild python"
-  echo " devctl project init django"
-  ;;
+  box)
+    case "${2:-}" in
+      create) box_create "${3:-$DEFAULT_BOX}" ;;
+      enter)  box_enter "${3:-$DEFAULT_BOX}" ;;
+      list)   box_list ;;
+      *)
+        echo "Uso: devctl box {create|enter|list} [nombre]" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  project)
+    case "${2:-}" in
+      init)
+        case "${3:-}" in
+          django) project_init_django ;;
+          *)
+            echo "Uso: devctl project init django" >&2
+            exit 1
+            ;;
+        esac
+        ;;
+      *)
+        echo "Uso: devctl project init django" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  doctor)
+    doctor
+    ;;
+  *)
+    echo "Uso:"
+    echo "  devctl box create [debian-work]"
+    echo "  devctl box enter [debian-work]"
+    echo "  devctl box list"
+    echo "  devctl project init django"
+    echo "  devctl doctor"
+    ;;
 esac

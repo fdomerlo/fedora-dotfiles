@@ -1,82 +1,80 @@
 # ==============================================================================
-# Fedora Workstation - Dev Environment Setup
+# Fedora Workstation - Aprovisionamiento Idempotente y Reproducible
 # ==============================================================================
 
-# Forzar bash como shell para la ejecución
 SHELL := /bin/bash
+REPO_DIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
-# Variables de entorno para instalaciones desatendidas
+# Variables de entorno para instalaciones desatendidas de Oh My Zsh
 export RUNZSH=no
 export CHSH=no
+export KEEP_ZSHRC=yes
 
-.PHONY: help install host shell containers devtools tooling devai desktop clean
+.PHONY: help install host shell containers devtools devai gitconfig github-auth desktop tooling verify
 
-# Target por defecto: mostrar ayuda
 help:
-	@echo "Opciones de instalación:"
-	@echo "  make install    - Aprovisiona la estación de trabajo completa (host + shell + devtools + tooling + devai + desktop + containers)"
-	@echo "  make host       - Configura repositorios, DNF, paquetes base, Snapper y devtools"
-	@echo "  make shell      - Configura Zsh, Oh My Zsh y copia dotfiles"
-	@echo "  make containers - Prepara el entorno de contenedores (Distrobox/Podman)"
-	@echo "  make devtools   - Instala herramientas de desarrollo y gestores de paquetes"
-	@echo "  make tooling    - Instala navegadores y editores de código"
-	@echo "  make devai      - Instala herramientas de inteligencia artificial"
-	@echo "  make desktop    - Instala extensiones GNOME y configura fuentes"
-	@echo "  make clean      - Elimina archivos temporales de la instalación"
+	@echo "Uso: make <target>"
+	@echo ""
+	@echo "Targets principales:"
+	@echo "  make install      - Aprovisiona la workstation completa (host + shell + containers + devtools + devai)"
+	@echo "  make host         - Verifica Btrfs, zRAM y Podman rootless; instala paquetes base faltantes"
+	@echo "  make shell        - Instala y configura Zsh, Oh My Zsh, plugins y enlace de ~/.zshrc"
+	@echo "  make containers   - Instala devctl y crea el entorno Distrobox persistente 'debian-work' (Debian 13)"
+	@echo "  make devtools     - Instala uv, fnm, SDKMAN, prepara GitHub CLI (SSH) e identidad de Git"
+	@echo "  make devai        - Instala OpenCode CLI, Antigravity CLI y Antigravity desktop (opcional)"
+	@echo "  make gitconfig    - Configura user.name/user.email globales (GIT_USER_NAME/GIT_USER_EMAIL o interactivo)"
+	@echo "  make github-auth  - Ejecuta el flujo interactivo oficial de autenticación en GitHub CLI (gh auth login)"
+	@echo "  make verify       - Ejecuta validaciones estáticas del repositorio y diagnóstico del entorno"
+	@echo ""
+	@echo "Targets opcionales (fuera de make install):"
+	@echo "  make desktop      - Fuentes (Fira Code, Noto Sans) y extensiones GNOME"
+	@echo "  make tooling      - Editores (VS Code, Zed) y navegador"
 
-# El comando maestro (Se ejecuta como usuario NORMAL)
-install: host shell containers devtools tooling devai desktop clean
-	@echo -e "\n✅ Instalación finalizada. Reinicia la terminal o el equipo para aplicar todos los cambios."
+install: host shell containers devtools devai
+	@echo ""
+	@echo "==> Aprovisionamiento completado."
+	@echo "    - Para autenticar GitHub CLI:   make github-auth"
+	@echo "    - Para ingresar a Debian 13:    distrobox enter debian-work"
+	@echo "    - Para verificar la estación:   make verify"
 
-# Sistema y Host (Pedirá sudo de manera selectiva)
 host:
-	@echo "==> Configurando Host (Fedora)..."
-	sudo bash host/setup.sh
-	sudo bash host/snapper.sh
-	sudo bash host/swap.sh 
+	@echo "==> [1/5] Verificando y configurando paquetes base del host (Fedora)..."
+	bash "$(REPO_DIR)/host/setup.sh"
 
-# Entorno de usuario (Shell y Dotfiles)
 shell:
-	@echo "==> Configurando Zsh y Dotfiles..."
-	bash scripts/ohmyzsh.sh
-	ln -sf $(PWD)/shell/zshrc $(HOME)/.zshrc
-	ln -sf $(PWD)/shell/gitconfig $(HOME)/.gitconfig
+	@echo "==> [2/5] Configurando Zsh, Oh My Zsh y dotfiles..."
+	bash "$(REPO_DIR)/scripts/ohmyzsh.sh"
 
-# Tooling y Contenedores
 containers:
-	@echo "==> Preparando entorno de contenedores..."
-	chmod +x shell/devctl
-	mkdir -p $(HOME)/.local/bin
-	ln -sf $(PWD)/shell/devctl $(HOME)/.local/bin/devctl
+	@echo "==> [3/5] Configurando contenedores (Podman rootless + Distrobox debian-work)..."
+	bash "$(REPO_DIR)/boxes/debian-work.sh"
 
-	@echo "Devctl listo. Usa:"
-	@echo "  ./devctl box create php"
-	@echo "  ./devctl box create python"
-
-# Entorno de desarrollo
 devtools:
-	@echo "==> Instalando devtools..."
-	bash scripts/devtools.sh
-	bash scripts/setup_gh.sh
-		
-# Entornos AI 
+	@echo "==> [4/5] Configurando toolchains (uv, fnm, SDKMAN), GitHub CLI e identidad de Git..."
+	bash "$(REPO_DIR)/scripts/devtools.sh"
+	bash "$(REPO_DIR)/scripts/setup_gh.sh"
+	bash "$(REPO_DIR)/scripts/setup_git.sh"
+
 devai:
-	@echo "==> Instalando herramientas de AI..."
-	bash scripts/devai.sh
+	@echo "==> [5/5] Configurando herramientas de IA (OpenCode, Antigravity)..."
+	bash "$(REPO_DIR)/scripts/devai.sh"
 
-# Tooling
-tooling:
-	@echo "==> Instalando navegadores y editores..."
-	bash scripts/tooling.sh
+gitconfig:
+	@echo "==> Configurando identidad global de Git..."
+	bash "$(REPO_DIR)/scripts/setup_git.sh"
 
-# Entorno de escritorio (GNOME: extensiones y fuentes)
+github-auth:
+	@echo "==> Autenticación interactiva con GitHub CLI..."
+	bash "$(REPO_DIR)/scripts/setup_gh.sh" --auth
+
 desktop:
-	@echo "==> Configurando escritorio GNOME (fuentes y extensiones)..."
-	bash scripts/desktop.sh
+	@echo "==> [Opcional] Configurando escritorio GNOME (fuentes y extensiones)..."
+	bash "$(REPO_DIR)/scripts/desktop.sh"
 
-# Utilidad para limpiar restos si algo falla
-clean:
-	@echo "==> Limpiando caches y residuales..."
-	sudo dnf autoremove -y
-	sudo dnf clean all
-	rm -rf $(HOME)/.oh-my-zsh.tmp || true
+tooling:
+	@echo "==> [Opcional] Instalando editores y navegador..."
+	bash "$(REPO_DIR)/scripts/tooling.sh"
+
+verify:
+	@echo "==> Verificando repositorio y entorno..."
+	bash "$(REPO_DIR)/scripts/verify.sh"
