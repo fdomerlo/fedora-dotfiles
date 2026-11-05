@@ -10,6 +10,17 @@ echo "================================================================="
 # ------------------------------------------------------------------------------
 echo "==> Aplicando configuración de fuentes..."
 
+# Instalar únicamente las fuentes ausentes requeridas por esta configuración
+FONT_PACKAGES=(fira-code-fonts google-noto-sans-vf-fonts)
+MISSING_FONTS=()
+for pkg in "${FONT_PACKAGES[@]}"; do
+    rpm -q "$pkg" &>/dev/null || MISSING_FONTS+=("$pkg")
+done
+if [[ ${#MISSING_FONTS[@]} -gt 0 ]]; then
+    echo "==> Instalando fuentes faltantes: ${MISSING_FONTS[*]}"
+    sudo dnf install -y "${MISSING_FONTS[@]}"
+fi
+
 # Interfaces: Mantenemos Adwaita (Adwaita Sans 11)
 gsettings set org.gnome.desktop.interface font-name 'Adwaita Sans 11'
 
