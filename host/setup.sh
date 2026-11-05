@@ -38,6 +38,8 @@ BASE_PACKAGES=(
   zip
   unzip
   podman
+  podman-compose
+  podman-docker
   distrobox
 )
 
@@ -98,5 +100,17 @@ fi
 # (overlay sobre Btrfs con compresión transparente zstd:1 y checksums de datos activos).
 # No se aplica chattr +C (NOCOW desactiva checksums y compresión zstd incrementando escrituras)
 # ni chown recursivo sobre ~/.local, ni se activa loginctl enable-linger.
+
+# 5. Compatibilidad Docker: socket rootless de Podman (activado por demanda, sin linger)
+#    Necesario para herramientas que usan la API de Docker (DOCKER_HOST, devcontainers, testcontainers).
+#    El CLI 'docker' lo provee podman-docker y 'podman-compose' no requiere el socket.
+if systemctl --user is-enabled --quiet podman.socket 2>/dev/null; then
+  echo "==> Socket rootless de Podman ya habilitado."
+elif systemctl --user show-environment &>/dev/null; then
+  echo "==> Habilitando socket rootless de Podman (compatibilidad API Docker)..."
+  systemctl --user enable --now podman.socket
+else
+  echo "ADVERTENCIA: No hay sesión systemd de usuario; habilitá luego: systemctl --user enable --now podman.socket" >&2
+fi
 
 echo "==> Host Fedora verificado y listo."

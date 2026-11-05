@@ -10,14 +10,14 @@ export RUNZSH=no
 export CHSH=no
 export KEEP_ZSHRC=yes
 
-.PHONY: help install host shell containers devtools devai gitconfig github-auth desktop tooling verify
+.PHONY: help install host shell containers devtools devai gitconfig github-auth desktop tooling snapper verify
 
 help:
 	@echo "Uso: make <target>"
 	@echo ""
 	@echo "Targets principales:"
 	@echo "  make install      - Aprovisiona la workstation completa (host + shell + containers + devtools + devai)"
-	@echo "  make host         - Verifica Btrfs, zRAM y Podman rootless; instala paquetes base faltantes"
+	@echo "  make host         - Verifica Btrfs, zRAM y Podman rootless; instala paquetes base (incl. podman-compose/docker)"
 	@echo "  make shell        - Instala y configura Zsh, Oh My Zsh, plugins y enlace de ~/.zshrc"
 	@echo "  make containers   - Instala devctl y crea el entorno Distrobox persistente 'debian-work' (Debian 13)"
 	@echo "  make devtools     - Instala uv, fnm, SDKMAN, prepara GitHub CLI (SSH) e identidad de Git"
@@ -29,6 +29,7 @@ help:
 	@echo "Targets opcionales (fuera de make install):"
 	@echo "  make desktop      - Fuentes (Fira Code, Noto Sans) y extensiones GNOME"
 	@echo "  make tooling      - Editores (VS Code, Zed) y navegador"
+	@echo "  make snapper      - Snapshots Btrfs de / con Snapper (solo si / es Btrfs)"
 
 install: host shell containers devtools devai
 	@echo ""
@@ -74,6 +75,10 @@ desktop:
 tooling:
 	@echo "==> [Opcional] Instalando editores y navegador..."
 	bash "$(REPO_DIR)/scripts/tooling.sh"
+
+snapper:
+	@echo "==> [Opcional] Configurando Snapper para / (Btrfs)..."
+	bash "$(REPO_DIR)/host/snapper.sh"
 
 verify:
 	@echo "==> Verificando repositorio y entorno..."

@@ -20,6 +20,7 @@ echo "=================================================================="
 REQUIRED_FILES=(
   "$REPO_DIR/Makefile"
   "$REPO_DIR/host/setup.sh"
+  "$REPO_DIR/host/snapper.sh"
   "$REPO_DIR/boxes/debian-work.sh"
   "$REPO_DIR/scripts/ohmyzsh.sh"
   "$REPO_DIR/scripts/devtools.sh"
@@ -46,6 +47,7 @@ done
 # 1.2 Validar sintaxis Bash (bash -n) en todos los scripts
 BASH_SCRIPTS=(
   "$REPO_DIR/host/setup.sh"
+  "$REPO_DIR/host/snapper.sh"
   "$REPO_DIR/boxes/debian-work.sh"
   "$REPO_DIR/scripts/ohmyzsh.sh"
   "$REPO_DIR/scripts/devtools.sh"

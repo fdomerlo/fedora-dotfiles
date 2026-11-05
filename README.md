@@ -48,7 +48,7 @@ make verify
 |--------|-------------|
 | `make help` | Muestra la ayuda con los targets disponibles |
 | `make install` | Aprovisiona la workstation completa (`host` + `shell` + `containers` + `devtools` + `devai`) |
-| `make host` | Verifica Fedora, Btrfs, zRAM y Podman rootless; instala únicamente los paquetes base faltantes |
+| `make host` | Verifica Fedora, Btrfs, zRAM y Podman rootless; instala únicamente los paquetes base faltantes (incluye `podman-compose` y `podman-docker`) y habilita el socket rootless de Podman |
 | `make shell` | Instala y configura Zsh, Oh My Zsh, `zsh-autosuggestions`, `zsh-syntax-highlighting` y enlaza `~/.zshrc` |
 | `make containers` | Instala `devctl` en `~/.local/bin` y crea el contenedor Distrobox persistente `debian-work` (Debian 13) si no existe |
 | `make devtools` | Instala `uv`, `fnm`, SDKMAN, configura GitHub CLI (`gh`) con protocolo SSH y la identidad global de Git |
@@ -58,8 +58,9 @@ make verify
 | `make verify` | Ejecuta validaciones estáticas (`bash -n`, referencias, portabilidad) y diagnóstico no destructivo del entorno |
 | `make desktop` | *(Opcional)* Instala fuentes faltantes (Fira Code, Noto Sans), las aplica y configura extensiones GNOME |
 | `make tooling` | *(Opcional)* Instala VS Code, Zed y navegador |
+| `make snapper` | *(Opcional)* Configura Snapper para `/` (solo en Btrfs) con retención conservadora y sin cuotas Btrfs |
 
-> **Nota:** `make install` no ejecuta actualizaciones masivas del sistema (`dnf upgrade`), limpiezas de caché (`dnf autoremove` / `dnf clean all`), Snapper, creación de swapfiles, ni personalizaciones cosméticas de escritorio GNOME.
+> **Nota:** `make install` no ejecuta actualizaciones masivas del sistema (`dnf upgrade`), limpiezas de caché (`dnf autoremove` / `dnf clean all`) ni creación de swapfiles. Snapper y la personalización de GNOME quedan como pasos opcionales (`make snapper`, `make desktop`).
 
 ---
 
@@ -67,7 +68,8 @@ make verify
 
 ```text
 host/
-└── setup.sh              # Verificación de Fedora, Btrfs, zRAM, Podman rootless y paquetes base
+├── setup.sh              # Verificación de Fedora, Btrfs, zRAM, Podman rootless y paquetes base
+└── snapper.sh            # Opcional (make snapper): snapshots Btrfs de / con retención conservadora
 
 boxes/
 └── debian-work.sh        # Creación idempotente del entorno Distrobox persistente 'debian-work' (Debian 13)
