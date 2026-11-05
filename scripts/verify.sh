@@ -20,7 +20,9 @@ echo "=================================================================="
 REQUIRED_FILES=(
   "$REPO_DIR/Makefile"
   "$REPO_DIR/host/setup.sh"
+  "$REPO_DIR/host/power.sh"
   "$REPO_DIR/host/snapper.sh"
+  "$REPO_DIR/host/snapper-rollback.sh"
   "$REPO_DIR/boxes/debian-box.sh"
   "$REPO_DIR/scripts/ohmyzsh.sh"
   "$REPO_DIR/scripts/devtools.sh"
@@ -45,7 +47,9 @@ done
 # 1.2 Validar sintaxis Bash (bash -n) en todos los scripts
 BASH_SCRIPTS=(
   "$REPO_DIR/host/setup.sh"
+  "$REPO_DIR/host/power.sh"
   "$REPO_DIR/host/snapper.sh"
+  "$REPO_DIR/host/snapper-rollback.sh"
   "$REPO_DIR/boxes/debian-box.sh"
   "$REPO_DIR/scripts/ohmyzsh.sh"
   "$REPO_DIR/scripts/devtools.sh"
@@ -105,6 +109,7 @@ fi
 MAIN_FLOW_FILES=(
   "$REPO_DIR/Makefile"
   "$REPO_DIR/host/setup.sh"
+  "$REPO_DIR/host/power.sh"
   "$REPO_DIR/boxes/debian-box.sh"
   "$REPO_DIR/scripts/ohmyzsh.sh"
   "$REPO_DIR/scripts/devtools.sh"
@@ -143,6 +148,100 @@ else
   warn "zRAM no detectado como activo en este entorno"
 fi
 
+# 2.1b Swap en disco e hibernación
+MEM_TOTAL_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+if swapon --show=NAME --noheadings 2>/dev/null | grep -Fxq "/swap/swapfile"; then
+  SWAP_SIZE_KB="$(awk '$1 == "/swap/swapfile" {print $3}' /proc/swaps)"
+  SWAP_PRIO="$(awk '$1 == "/swap/swapfile" {print $5}' /proc/swaps)"
+  if (( SWAP_SIZE_KB >= MEM_TOTAL_KB )); then
+    pass "Swapfile /swap/swapfile activo (${SWAP_SIZE_KB} KiB, prioridad ${SWAP_PRIO})"
+  else
+    warn "Swapfile /swap/swapfile (${SWAP_SIZE_KB} KiB) es menor que la RAM (${MEM_TOTAL_KB} KiB)"
+  fi
+  if [[ "$SWAP_PRIO" == "10" ]]; then
+    pass "Prioridad del swapfile correcta (10, menor que zRAM)"
+  else
+    warn "Prioridad del swapfile inesperada: ${SWAP_PRIO:-desconocida} (esperada: 10)"
+  fi
+else
+  warn "Swapfile /swap/swapfile no activo (ejecutar 'make power')"
+fi
+
+if [[ -e /swap/swapfile ]]; then
+  SWAP_CTX="$(stat -c %C /swap/swapfile 2>/dev/null || true)"
+  SWAP_DIR_CTX="$(stat -c %C /swap 2>/dev/null || true)"
+  if [[ "$SWAP_CTX" == *swapfile_t* ]]; then
+    pass "Etiqueta SELinux del swapfile: swapfile_t"
+  else
+    warn "Etiqueta SELinux del swapfile inesperada: ${SWAP_CTX:-desconocida}"
+  fi
+  if [[ -z "$SWAP_DIR_CTX" || "$SWAP_DIR_CTX" == "?" || "$SWAP_DIR_CTX" == *unlabeled_t* ]]; then
+    warn "Directorio /swap sin etiqueta SELinux utilizable (${SWAP_DIR_CTX:-desconocida}); puede bloquear la hibernación"
+  else
+    pass "Directorio /swap etiquetado para SELinux (${SWAP_DIR_CTX##*:})"
+  fi
+fi
+
+if command -v busctl &>/dev/null; then
+  CAN_HIBERNATE="$(busctl call org.freedesktop.login1 /org/freedesktop/login1 \
+    org.freedesktop.login1.Manager CanHibernate 2>&1 || true)"
+  case "$CAN_HIBERNATE" in
+    *'"yes"'*) pass "systemd-logind permite hibernar (CanHibernate=yes)" ;;
+    *'"challenge"'*) pass "systemd-logind permite hibernar con autenticación (CanHibernate=challenge)" ;;
+    *'"na"'*) warn "systemd-logind no considera viable la hibernación (CanHibernate=na)" ;;
+    *) warn "No se pudo consultar CanHibernate: ${CAN_HIBERNATE:-sin respuesta}" ;;
+  esac
+fi
+
+if grep -qw 'disk' /sys/power/state 2>/dev/null; then
+  pass "Hibernación soportada por el kernel (/sys/power/state incluye disk)"
+else
+  warn "El kernel no reporta soporte de hibernación ('disk' ausente)"
+fi
+
+IMAGE_SIZE="$(cat /sys/power/image_size 2>/dev/null || echo 0)"
+if (( IMAGE_SIZE >= MEM_TOTAL_KB * 1024 )); then
+  pass "Límite de imagen de hibernación suficiente (${IMAGE_SIZE} bytes)"
+else
+  warn "image_size (${IMAGE_SIZE} bytes) es menor que la RAM; puede fallar la hibernación"
+fi
+
+if [[ -f /etc/dracut.conf.d/99-dotfiles-power.conf ]] &&
+   grep -q 'resume overlayfs' /etc/dracut.conf.d/99-dotfiles-power.conf; then
+  pass "dracut configurado con los módulos resume y overlayfs"
+else
+  warn "dracut no tiene configurados resume/overlayfs (ejecutar 'make power')"
+fi
+
+if [[ -x /etc/systemd/system-sleep/50-dotfiles-gvfs ]]; then
+  pass "Hook pre-hibernación para liberar GVFS/FUSE instalado"
+else
+  warn "Hook pre-hibernación GVFS no instalado (ejecutar 'make power')"
+fi
+
+SWAPPINESS="$(sysctl -n vm.swappiness 2>/dev/null || echo desconocido)"
+PAGE_CLUSTER="$(sysctl -n vm.page-cluster 2>/dev/null || echo desconocido)"
+if [[ "$SWAPPINESS" == "100" && "$PAGE_CLUSTER" == "0" ]]; then
+  pass "sysctl de zRAM/swap aplicados (swappiness=100, page-cluster=0)"
+else
+  warn "sysctl de swap inesperados (swappiness=${SWAPPINESS}, page-cluster=${PAGE_CLUSTER})"
+fi
+
+if [[ -f /etc/systemd/oomd.conf.d/99-dotfiles.conf ]] &&
+   grep -q 'SwapUsedLimit=50%' /etc/systemd/oomd.conf.d/99-dotfiles.conf; then
+  pass "systemd-oomd configurado para presión de memoria"
+else
+  warn "systemd-oomd sin ajustes de dotfiles (ejecutar 'make power')"
+fi
+
+if command -v mokutil &>/dev/null; then
+  if mokutil --sb-state 2>&1 | grep -q 'SecureBoot enabled'; then
+    warn "Secure Boot habilitado: el lockdown puede bloquear la hibernación"
+  else
+    pass "Secure Boot deshabilitado (hibernación sin bloqueo de lockdown)"
+  fi
+fi
+
 if [[ "$ROOT_FS" == "btrfs" ]]; then
   if command -v snapper &>/dev/null; then
     pass "Snapper instalado"
@@ -153,6 +252,48 @@ if [[ "$ROOT_FS" == "btrfs" ]]; then
     fi
   else
     warn "Snapper no instalado (opcional: 'make snapper')"
+  fi
+
+  if findmnt -rn /.snapshots >/dev/null 2>&1; then
+    SNAP_OPTS="$(findmnt -n -o OPTIONS /.snapshots 2>/dev/null || true)"
+    if [[ "$SNAP_OPTS" == *"subvol=/snapshots"* || "$SNAP_OPTS" == *"subvol=snapshots"* ]]; then
+      pass "/.snapshots montado desde el subvolumen top-level 'snapshots'"
+    else
+      warn "/.snapshots está montado, pero no desde el subvolumen top-level 'snapshots'"
+    fi
+  else
+    warn "/.snapshots no está montado (ejecutar 'make snapper')"
+  fi
+
+  for timer in snapper-timeline.timer snapper-cleanup.timer; do
+    if systemctl is-enabled --quiet "$timer" 2>/dev/null; then
+      pass "Timer habilitado: $timer"
+    else
+      warn "Timer no habilitado: $timer"
+    fi
+  done
+
+  if rpm -q grub-btrfs &>/dev/null; then
+    pass "grub-btrfs instalado"
+    if systemctl is-enabled --quiet grub-btrfs.path 2>/dev/null; then
+      pass "grub-btrfs.path habilitado"
+    else
+      warn "grub-btrfs.path no habilitado"
+    fi
+    if [[ -r /etc/default/grub-btrfs/config ]] &&
+       grep -q 'rd.live.overlay.overlayfs=1' /etc/default/grub-btrfs/config; then
+      pass "Overlayfs configurado para las entradas de snapshot"
+    else
+      warn "Overlayfs no configurado en /etc/default/grub-btrfs/config"
+    fi
+  else
+    warn "grub-btrfs no instalado (opcional: 'make snapper')"
+  fi
+
+  if [[ -x /usr/local/sbin/snapper-rollback ]]; then
+    pass "Helper de rollback instalado: /usr/local/sbin/snapper-rollback"
+  else
+    warn "Helper de rollback no instalado (opcional: 'make snapper')"
   fi
 fi
 

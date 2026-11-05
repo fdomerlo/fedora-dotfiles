@@ -10,14 +10,15 @@ export RUNZSH=no
 export CHSH=no
 export KEEP_ZSHRC=yes
 
-.PHONY: help install host shell containers devtools devai gitconfig github-auth desktop tooling snapper verify
+.PHONY: help install host power shell containers devtools devai gitconfig github-auth desktop tooling snapper verify
 
 help:
 	@echo "Uso: make <target>"
 	@echo ""
 	@echo "Targets principales:"
 	@echo "  make install      - Aprovisiona la workstation completa (host + shell + containers + devtools + devai)"
-	@echo "  make host         - Verifica Btrfs, zRAM y Podman rootless; instala paquetes base (incl. podman-compose/docker)"
+	@echo "  make host         - Verifica Btrfs, zRAM y Podman rootless; instala paquetes base y configura swap/hibernación/oomd"
+	@echo "  make power        - Reconfigura swapfile Btrfs, hibernación y respuesta bajo presión de memoria"
 	@echo "  make shell        - Instala y configura Zsh, Oh My Zsh, plugins y enlace de ~/.zshrc"
 	@echo "  make containers   - Instala devctl y crea el entorno Distrobox persistente 'debian-box' (Debian 13)"
 	@echo "  make devtools     - Instala uv, fnm, SDKMAN, prepara GitHub CLI (SSH) e identidad de Git"
@@ -29,7 +30,7 @@ help:
 	@echo "Targets opcionales (fuera de make install):"
 	@echo "  make desktop      - Fuentes (JetBrains Mono, Noto Sans) y extensiones GNOME"
 	@echo "  make tooling      - Editores (VS Code, Zed) y navegador"
-	@echo "  make snapper      - Snapshots Btrfs de / con Snapper (solo si / es Btrfs)"
+	@echo "  make snapper      - Snapshots Btrfs, arranque desde GRUB y helper de rollback (solo si / es Btrfs)"
 
 install: host shell containers devtools devai
 	@echo ""
@@ -41,6 +42,12 @@ install: host shell containers devtools devai
 host:
 	@echo "==> [1/5] Verificando y configurando paquetes base del host (Fedora)..."
 	bash "$(REPO_DIR)/host/setup.sh"
+	@echo "==> [power] Configurando swapfile, hibernación y respuesta bajo presión..."
+	SWAP_GIB="$(SWAP_GIB)" bash "$(REPO_DIR)/host/power.sh"
+
+power:
+	@echo "==> [Opcional] Configurando swapfile, hibernación y respuesta bajo presión..."
+	SWAP_GIB="$(SWAP_GIB)" bash "$(REPO_DIR)/host/power.sh"
 
 shell:
 	@echo "==> [2/5] Configurando Zsh, Oh My Zsh y dotfiles..."

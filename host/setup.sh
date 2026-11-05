@@ -41,6 +41,7 @@ BASE_PACKAGES=(
   podman-compose
   podman-docker
   distrobox
+  policycoreutils-python-utils
 )
 
 if [[ "$ROOT_FS" == "btrfs" || "$HOME_FS" == "btrfs" ]]; then
@@ -61,7 +62,7 @@ else
   echo "==> Todos los paquetes base ya están instalados. Sin escrituras de DNF."
 fi
 
-# 3. Verificar zRAM nativo de Fedora (sin crear swapfiles ni alterar sysctl)
+# 3. Verificar zRAM nativo de Fedora (host/power.sh agrega el swapfile L2 y sysctl)
 echo "==> Verificando configuración nativa de zRAM..."
 if command -v zramctl &>/dev/null && zramctl --output NAME --noheadings 2>/dev/null | grep -q 'zram'; then
   zramctl
