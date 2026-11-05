@@ -27,7 +27,7 @@ help:
 	@echo "  make verify       - Ejecuta validaciones estáticas del repositorio y diagnóstico del entorno"
 	@echo ""
 	@echo "Targets opcionales (fuera de make install):"
-	@echo "  make desktop      - Fuentes (Fira Code, Noto Sans) y extensiones GNOME"
+	@echo "  make desktop      - Fuentes (JetBrains Mono, Noto Sans) y extensiones GNOME"
 	@echo "  make tooling      - Editores (VS Code, Zed) y navegador"
 	@echo "  make snapper      - Snapshots Btrfs de / con Snapper (solo si / es Btrfs)"
 

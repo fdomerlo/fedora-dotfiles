@@ -62,7 +62,7 @@ make snapper       # Snapshots Btrfs de / con Snapper
 
 | Target | Descripción |
 |--------|-------------|
-| `make desktop` | Instala Fira Code y Noto Sans si faltan, configura las tipografías e instala/habilita las extensiones GNOME |
+| `make desktop` | Instala JetBrains Mono y Noto Sans si faltan, configura las tipografías e instala/habilita las extensiones GNOME |
 | `make tooling` | Configura los repositorios oficiales e instala Visual Studio Code y Google Chrome; instala Zed con su instalador oficial |
 | `make snapper` | Configura Snapper para `/` (solo en Btrfs) con retención conservadora, sin cuotas Btrfs y con snapshots automáticos pre/post transacción de DNF |
 
@@ -94,7 +94,6 @@ scripts/
 ├── tooling.sh            # Opcional (make tooling): VS Code, Google Chrome y Zed
 └── antigravity.png       # Ícono de la entrada de escritorio de Antigravity
 
-.envrc.template           # Plantilla direnv que activa el .venv creado por uv
 .gitattributes            # Fuerza finales de línea LF
 Makefile                  # Orquestación del aprovisionamiento
 ```
@@ -172,7 +171,7 @@ Los gestores se instalan una sola vez (versión estable vigente) y se integran e
 
 ## Escritorio GNOME (`make desktop`)
 
-- **Tipografías:** interfaz Adwaita Sans 11, documentos Noto Sans 12, monoespaciada Fira Code 11 (las fuentes se instalan si faltan).
+- **Tipografías:** interfaz Adwaita Sans 11, documentos Noto Sans 12, monoespaciada JetBrains Mono 11 (las fuentes se instalan si faltan).
 - **Extensiones:** Alphabetical App Grid, Vitals, Dash to Dock y Tiling Shell. Se instalan desde extensions.gnome.org si no están presentes y se habilitan; Pop Shell se deshabilita para evitar conflictos de tiling.
 
 Puede ser necesario cerrar sesión para que GNOME Shell cargue extensiones nuevas.

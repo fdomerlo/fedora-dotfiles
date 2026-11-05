@@ -31,7 +31,6 @@ REQUIRED_FILES=(
   "$REPO_DIR/scripts/verify.sh"
   "$REPO_DIR/shell/zshrc"
   "$REPO_DIR/shell/devctl"
-  "$REPO_DIR/.envrc.template"
   "$REPO_DIR/README.md"
 )
 
