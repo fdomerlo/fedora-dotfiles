@@ -6,17 +6,6 @@
 
 Aprovisionamiento **simple, idempotente, seguro y reproducible** para una estación de trabajo Fedora Workstation orientada a desarrollo de software, administración de sistemas y trabajo con herramientas de IA.
 
-## Principios de diseño
-
-1. **Cero escrituras innecesarias:** no se ejecutan `dnf upgrade`, `dnf autoremove`, `dnf clean all` ni `git pull` automáticos; solo se instalan paquetes o herramientas ausentes y solo se escriben configuraciones que difieren.
-2. **Respeto por los valores predeterminados de Fedora:** se conserva **zRAM** (`zram-generator`) sin swapfiles de disco ni cambios en `vm.*`, y **Podman rootless** con su almacenamiento nativo sobre Btrfs (`zstd:1` y checksums activos), sin `chattr +C`, sin `chown -R ~/.local` y sin `loginctl enable-linger`.
-3. **Compatibilidad con servidores Debian:** contenedor Distrobox persistente `debian-work` basado en la imagen oficial `docker.io/library/debian:13`.
-4. **Compatibilidad con Docker:** `podman-docker` (CLI `docker`), `podman-compose` y el socket rootless de Podman para herramientas que usan la API de Docker.
-5. **Sin datos personales versionados:** la identidad de Git se configura en la máquina (`make gitconfig`), no en el repositorio. Todas las rutas se basan en `$HOME` y `PATH` se deduplica en Zsh (`typeset -U path PATH`).
-6. **Ejecución como usuario normal:** ningún script se ejecuta con `sudo`; cada uno pide privilegios solo para el paso puntual que los necesita.
-
----
-
 ## Instalación rápida
 
 En una instalación limpia de Fedora Workstation:
