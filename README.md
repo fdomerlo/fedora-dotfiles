@@ -45,7 +45,7 @@ make snapper       # Snapshots Btrfs de / con Snapper
 | `make install` | Ejecuta `host` → `shell` → `containers` → `devtools` → `devai` |
 | `make host` | Verifica Fedora, Btrfs, zRAM y Podman rootless; instala los paquetes base faltantes (`git`, `curl`, `wget`, `jq`, `zip`, `unzip`, `podman`, `podman-compose`, `podman-docker`, `distrobox` y `btrfs-progs` si corresponde) y habilita el socket rootless de Podman |
 | `make shell` | Instala Zsh, Oh My Zsh, `zsh-autosuggestions` y `zsh-syntax-highlighting`; enlaza `~/.zshrc` (respalda el previo en `~/.zshrc.pre-dotfiles`) |
-| `make containers` | Enlaza `devctl` en `~/.local/bin` y crea `debian-work` (Debian 13) si no existe |
+| `make containers` | Enlaza `devctl` en `~/.local/bin` y crea `debian-box` (Debian 13) si no existe |
 | `make devtools` | Instala `uv`, `fnm` y SDKMAN; prepara GitHub CLI (`git_protocol=ssh`) y la identidad global de Git |
 | `make devai` | Instala OpenCode CLI y Antigravity CLI si faltan; despliega Antigravity desktop si hay un paquete local |
 
@@ -76,11 +76,11 @@ host/
 └── snapper.sh            # Opcional (make snapper): snapshots Btrfs de /
 
 boxes/
-└── debian-work.sh        # Creación idempotente del Distrobox 'debian-work' (Debian 13)
+└── debian-box.sh         # Creación idempotente del Distrobox 'debian-box' (Debian 13)
 
 shell/
 ├── zshrc                 # Zsh + Oh My Zsh, PATH deduplicado, fnm, SDKMAN y prompt con indicador de contenedor
-└── devctl                # CLI para Distrobox, plantillas de proyecto y diagnóstico
+└── devctl                # CLI para Distrobox y diagnóstico
 
 scripts/
 ├── ohmyzsh.sh            # Zsh, Oh My Zsh, plugins y enlace de ~/.zshrc
@@ -94,9 +94,6 @@ scripts/
 ├── tooling.sh            # Opcional (make tooling): VS Code, Google Chrome y Zed
 └── antigravity.png       # Ícono de la entrada de escritorio de Antigravity
 
-templates/django/
-└── manage.sh             # Inicializador de proyectos Django con uv
-
 .envrc.template           # Plantilla direnv que activa el .venv creado por uv
 .gitattributes            # Fuerza finales de línea LF
 Makefile                  # Orquestación del aprovisionamiento
@@ -106,19 +103,19 @@ Makefile                  # Orquestación del aprovisionamiento
 
 ## Contenedores
 
-### Distrobox `debian-work`
+### Distrobox `debian-box`
 
 Usa la imagen oficial `docker.io/library/debian:13` sobre Podman rootless y comparte `$HOME`, de modo que los repositorios y toolchains del host están disponibles sin duplicarlos.
 
 ```bash
 distrobox list
-distrobox enter debian-work
+distrobox enter debian-box
 ```
 
-`make install` nunca destruye, recrea ni actualiza `debian-work`. Para actualizarlo explícitamente:
+`make install` nunca destruye, recrea ni actualiza `debian-box`. Para actualizarlo explícitamente:
 
 ```bash
-distrobox upgrade debian-work
+distrobox upgrade debian-box
 ```
 
 ### Compatibilidad con Docker
@@ -140,20 +137,10 @@ export DOCKER_HOST="unix://${XDG_RUNTIME_DIR}/podman/podman.sock"
 Se enlaza en `~/.local/bin/devctl` con `make containers`.
 
 ```bash
-devctl box create [nombre]     # Crea el Distrobox (por defecto: debian-work) si no existe
+devctl box create [nombre]     # Crea el Distrobox (por defecto: debian-box) si no existe
 devctl box enter [nombre]      # Ingresa al Distrobox
 devctl box list                # Lista los Distrobox
-devctl project init django     # Copia la plantilla Django en ./app y .envrc (sin sobrescribir archivos)
 devctl doctor                  # Ejecuta scripts/verify.sh
-```
-
-### Plantilla Django
-
-```bash
-mkdir mi-proyecto && cd mi-proyecto
-devctl project init django
-cd app && ./manage.sh          # uv venv + django + startproject + migrate
-cd .. && direnv allow          # Opcional: activa el .venv automáticamente
 ```
 
 ---

@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 REPO_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 
-DEFAULT_BOX="debian-work"
+DEFAULT_BOX="debian-box"
 export DBX_CONTAINER_MANAGER=podman
 
 log() {
@@ -20,7 +20,7 @@ require() {
 
 box_create() {
   local name="${1:-$DEFAULT_BOX}"
-  BOX_NAME="$name" bash "$REPO_DIR/boxes/debian-work.sh"
+  BOX_NAME="$name" bash "$REPO_DIR/boxes/debian-box.sh"
 }
 
 box_enter() {
@@ -32,26 +32,6 @@ box_enter() {
 box_list() {
   require distrobox
   distrobox list
-}
-
-project_init_django() {
-  log "Inicializando plantilla de proyecto Django en ./app"
-
-  mkdir -p app
-  # Copiar cada archivo de la plantilla solo si no existe (sin depender del código de salida de `cp -n`)
-  local src dst
-  for src in "$REPO_DIR/templates/django/"*; do
-    dst="app/$(basename "$src")"
-    if [[ -e "$dst" ]]; then
-      echo "    Se conserva el archivo existente: $dst"
-    else
-      cp "$src" "$dst"
-    fi
-  done
-  if [[ ! -f .envrc ]]; then
-    cp "$REPO_DIR/.envrc.template" .envrc
-  fi
-  echo "Proyecto preparado. Ejecutá: direnv allow (si usás direnv) o revisá ./app/manage.sh"
 }
 
 doctor() {
@@ -70,32 +50,14 @@ case "${1:-}" in
         ;;
     esac
     ;;
-  project)
-    case "${2:-}" in
-      init)
-        case "${3:-}" in
-          django) project_init_django ;;
-          *)
-            echo "Uso: devctl project init django" >&2
-            exit 1
-            ;;
-        esac
-        ;;
-      *)
-        echo "Uso: devctl project init django" >&2
-        exit 1
-        ;;
-    esac
-    ;;
   doctor)
     doctor
     ;;
   *)
     echo "Uso:"
-    echo "  devctl box create [debian-work]"
-    echo "  devctl box enter [debian-work]"
+    echo "  devctl box create [debian-box]"
+    echo "  devctl box enter [debian-box]"
     echo "  devctl box list"
-    echo "  devctl project init django"
     echo "  devctl doctor"
     ;;
 esac

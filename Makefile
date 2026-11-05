@@ -19,7 +19,7 @@ help:
 	@echo "  make install      - Aprovisiona la workstation completa (host + shell + containers + devtools + devai)"
 	@echo "  make host         - Verifica Btrfs, zRAM y Podman rootless; instala paquetes base (incl. podman-compose/docker)"
 	@echo "  make shell        - Instala y configura Zsh, Oh My Zsh, plugins y enlace de ~/.zshrc"
-	@echo "  make containers   - Instala devctl y crea el entorno Distrobox persistente 'debian-work' (Debian 13)"
+	@echo "  make containers   - Instala devctl y crea el entorno Distrobox persistente 'debian-box' (Debian 13)"
 	@echo "  make devtools     - Instala uv, fnm, SDKMAN, prepara GitHub CLI (SSH) e identidad de Git"
 	@echo "  make devai        - Instala OpenCode CLI, Antigravity CLI y Antigravity desktop (opcional)"
 	@echo "  make gitconfig    - Configura user.name/user.email globales (GIT_USER_NAME/GIT_USER_EMAIL o interactivo)"
@@ -35,7 +35,7 @@ install: host shell containers devtools devai
 	@echo ""
 	@echo "==> Aprovisionamiento completado."
 	@echo "    - Para autenticar GitHub CLI:   make github-auth"
-	@echo "    - Para ingresar a Debian 13:    distrobox enter debian-work"
+	@echo "    - Para ingresar a Debian 13:    distrobox enter debian-box"
 	@echo "    - Para verificar la estación:   make verify"
 
 host:
@@ -47,8 +47,8 @@ shell:
 	bash "$(REPO_DIR)/scripts/ohmyzsh.sh"
 
 containers:
-	@echo "==> [3/5] Configurando contenedores (Podman rootless + Distrobox debian-work)..."
-	bash "$(REPO_DIR)/boxes/debian-work.sh"
+	@echo "==> [3/5] Configurando contenedores (Podman rootless + Distrobox debian-box)..."
+	bash "$(REPO_DIR)/boxes/debian-box.sh"
 
 devtools:
 	@echo "==> [4/5] Configurando toolchains (uv, fnm, SDKMAN), GitHub CLI e identidad de Git..."

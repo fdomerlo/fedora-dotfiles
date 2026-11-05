@@ -21,7 +21,7 @@ REQUIRED_FILES=(
   "$REPO_DIR/Makefile"
   "$REPO_DIR/host/setup.sh"
   "$REPO_DIR/host/snapper.sh"
-  "$REPO_DIR/boxes/debian-work.sh"
+  "$REPO_DIR/boxes/debian-box.sh"
   "$REPO_DIR/scripts/ohmyzsh.sh"
   "$REPO_DIR/scripts/devtools.sh"
   "$REPO_DIR/scripts/setup_gh.sh"
@@ -31,7 +31,6 @@ REQUIRED_FILES=(
   "$REPO_DIR/scripts/verify.sh"
   "$REPO_DIR/shell/zshrc"
   "$REPO_DIR/shell/devctl"
-  "$REPO_DIR/templates/django/manage.sh"
   "$REPO_DIR/.envrc.template"
   "$REPO_DIR/README.md"
 )
@@ -48,7 +47,7 @@ done
 BASH_SCRIPTS=(
   "$REPO_DIR/host/setup.sh"
   "$REPO_DIR/host/snapper.sh"
-  "$REPO_DIR/boxes/debian-work.sh"
+  "$REPO_DIR/boxes/debian-box.sh"
   "$REPO_DIR/scripts/ohmyzsh.sh"
   "$REPO_DIR/scripts/devtools.sh"
   "$REPO_DIR/scripts/setup_gh.sh"
@@ -59,7 +58,6 @@ BASH_SCRIPTS=(
   "$REPO_DIR/scripts/desktop.sh"
   "$REPO_DIR/scripts/tooling.sh"
   "$REPO_DIR/shell/devctl"
-  "$REPO_DIR/templates/django/manage.sh"
 )
 
 for s in "${BASH_SCRIPTS[@]}"; do
@@ -108,7 +106,7 @@ fi
 MAIN_FLOW_FILES=(
   "$REPO_DIR/Makefile"
   "$REPO_DIR/host/setup.sh"
-  "$REPO_DIR/boxes/debian-work.sh"
+  "$REPO_DIR/boxes/debian-box.sh"
   "$REPO_DIR/scripts/ohmyzsh.sh"
   "$REPO_DIR/scripts/devtools.sh"
   "$REPO_DIR/scripts/setup_gh.sh"
@@ -171,10 +169,10 @@ fi
 
 if command -v distrobox &>/dev/null; then
   pass "Distrobox instalado"
-  if podman container exists debian-work 2>/dev/null || distrobox list --no-color 2>/dev/null | awk -F'|' 'NR>1 {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' | grep -Fxq "debian-work"; then
-    pass "Contenedor Distrobox 'debian-work' presente"
+  if podman container exists debian-box 2>/dev/null || distrobox list --no-color 2>/dev/null | awk -F'|' 'NR>1 {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' | grep -Fxq "debian-box"; then
+    pass "Contenedor Distrobox 'debian-box' presente"
   else
-    warn "Contenedor Distrobox 'debian-work' aún no creado"
+    warn "Contenedor Distrobox 'debian-box' aún no creado"
   fi
 else
   warn "Distrobox no está instalado aún"

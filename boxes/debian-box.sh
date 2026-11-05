@@ -9,7 +9,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-BOX_NAME="${BOX_NAME:-debian-work}"
+BOX_NAME="${BOX_NAME:-debian-box}"
 BOX_IMAGE="${BOX_IMAGE:-docker.io/library/debian:13}"
 
 for cmd in podman distrobox; do
@@ -44,7 +44,7 @@ if [[ "$PODMAN_ROOTLESS" != "true" ]]; then
   exit 1
 fi
 
-# 3. Crear el contenedor persistente debian-work solo si no existe
+# 3. Crear el contenedor persistente debian-box solo si no existe
 container_exists() {
   local name="$1"
   if podman container exists "$name" 2>/dev/null; then

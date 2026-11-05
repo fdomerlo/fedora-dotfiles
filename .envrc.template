@@ -1,8 +1,0 @@
-# Plantilla direnv: activa el entorno virtual creado por uv (`uv venv`).
-# No usa `layout python` para no crear un segundo entorno virtual en .direnv/.
-for venv in .venv app/.venv; do
-  if [[ -f "$venv/bin/activate" ]]; then
-    source "$venv/bin/activate"
-    break
-  fi
-done
