@@ -24,6 +24,11 @@ fi
 ARCHIVO_APP="$DIR_DESCARGAS/Antigravity.tar.gz"
 
 ensure_desktop_integration() {
+  # Garantizar que el ícono exista en el directorio de instalación (p. ej. si se instaló con una versión previa)
+  if [[ -f "$ICON_SRC" ]] && { [[ ! -f "$ICON_DST" ]] || ! cmp -s "$ICON_SRC" "$ICON_DST"; }; then
+    sudo install -m 0644 "$ICON_SRC" "$ICON_DST"
+  fi
+
   # Enlace simbólico en /usr/local/bin solo si no apunta ya al destino correcto
   if [[ ! -L "$SYMLINK_BIN" ]] || [[ "$(readlink -f "$SYMLINK_BIN" 2>/dev/null || true)" != "$INSTALL_DIR/$BIN_APP" ]]; then
     sudo ln -sfn "$INSTALL_DIR/$BIN_APP" "$SYMLINK_BIN"

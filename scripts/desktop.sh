@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ $EUID -eq 0 ]]; then
+    echo "ERROR: Ejecutá este script como usuario normal (sin sudo)." >&2
+    exit 1
+fi
+
+gsettings_set_if_needed() {
+    local schema="$1" key="$2" expected="$3" raw="$4"
+    local current
+    current="$(gsettings get "$schema" "$key" 2>/dev/null || true)"
+    if [[ "$current" != "$expected" ]]; then
+        gsettings set "$schema" "$key" "$raw" 2>/dev/null || true
+    fi
+}
+
 echo "================================================================="
 echo "==> Configurando entorno de escritorio GNOME (Fuentes y Extensiones)"
 echo "================================================================="
@@ -22,16 +36,16 @@ if [[ ${#MISSING_FONTS[@]} -gt 0 ]]; then
 fi
 
 # Interfaces: Mantenemos Adwaita (Adwaita Sans 11)
-gsettings set org.gnome.desktop.interface font-name 'Adwaita Sans 11'
+gsettings_set_if_needed org.gnome.desktop.interface font-name "'Adwaita Sans 11'" "Adwaita Sans 11"
 
 # Documentos: Noto Sans Regular 12
-gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 12'
+gsettings_set_if_needed org.gnome.desktop.interface document-font-name "'Noto Sans 12'" "Noto Sans 12"
 
 # Monoespaciada: Fira Code 11
-gsettings set org.gnome.desktop.interface monospace-font-name 'Fira Code 11'
+gsettings_set_if_needed org.gnome.desktop.interface monospace-font-name "'Fira Code 11'" "Fira Code 11"
 
 # Título de ventanas (mantenemos coherencia con Adwaita Sans Bold 11)
-gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Adwaita Sans Bold 11' || true
+gsettings_set_if_needed org.gnome.desktop.wm.preferences titlebar-font "'Adwaita Sans Bold 11'" "Adwaita Sans Bold 11"
 
 echo "    ✔ Interfaz:     $(gsettings get org.gnome.desktop.interface font-name)"
 echo "    ✔ Documentos:   $(gsettings get org.gnome.desktop.interface document-font-name)"
@@ -42,7 +56,7 @@ echo "    ✔ Monoespacio:  $(gsettings get org.gnome.desktop.interface monospac
 # ------------------------------------------------------------------------------
 # Permite que extensiones funcionales sigan cargando aunque la versión mayor de GNOME
 # avance más rápido que las etiquetas en extensions.gnome.org.
-gsettings set org.gnome.shell disable-extension-version-validation true 2>/dev/null || true
+gsettings_set_if_needed org.gnome.shell disable-extension-version-validation "true" "true"
 
 # ------------------------------------------------------------------------------
 # 3. Instalación de Extensiones
@@ -177,18 +191,13 @@ for ext in required:
 if updated != current:
     val_str = str(updated)
     subprocess.run(["gsettings", "set", schema, key, val_str], check=True)
-    print(f"    ✔ Lista de extensiones habilitadas actualizada en GSettings.")
+    subprocess.run(["gnome-extensions", "disable", "pop-shell@system76.com"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    for ext in required:
+        subprocess.run(["gnome-extensions", "enable", ext], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    print("    ✔ Lista de extensiones habilitadas actualizada en GSettings.")
 else:
-    print(f"    ✔ Todas las extensiones ya estaban registradas en GSettings.")
+    print("    ✔ Todas las extensiones ya estaban registradas en GSettings.")
 EOF
-
-# Deshabilitar pop-shell para evitar conflictos si estuviera activa
-gnome-extensions disable "pop-shell@system76.com" 2>/dev/null || true
-
-# También invocar `gnome-extensions enable` para activación en caliente si la sesión está abierta
-for uuid in "AlphabeticalAppGrid@stuarthayhurst" "Vitals@CoreCoding.com" "dash-to-dock@micxgx.gmail.com" "tilingshell@ferrarodomenico.com"; do
-    gnome-extensions enable "$uuid" 2>/dev/null || true
-done
 
 echo "==> Estado actual de extensiones habilitadas:"
 gsettings get org.gnome.shell enabled-extensions

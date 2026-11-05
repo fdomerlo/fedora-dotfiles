@@ -104,7 +104,7 @@ fi
 # 5. Compatibilidad Docker: socket rootless de Podman (activado por demanda, sin linger)
 #    Necesario para herramientas que usan la API de Docker (DOCKER_HOST, devcontainers, testcontainers).
 #    El CLI 'docker' lo provee podman-docker y 'podman-compose' no requiere el socket.
-if systemctl --user is-enabled --quiet podman.socket 2>/dev/null; then
+if systemctl --user is-enabled --quiet podman.socket 2>/dev/null && systemctl --user is-active --quiet podman.socket 2>/dev/null; then
   echo "==> Socket rootless de Podman ya habilitado."
 elif systemctl --user show-environment &>/dev/null; then
   echo "==> Habilitando socket rootless de Podman (compatibilidad API Docker)..."

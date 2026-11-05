@@ -146,6 +146,19 @@ else
   warn "zRAM no detectado como activo en este entorno"
 fi
 
+if [[ "$ROOT_FS" == "btrfs" ]]; then
+  if command -v snapper &>/dev/null; then
+    pass "Snapper instalado"
+    if [[ -f /etc/dnf/libdnf5-plugins/actions.d/snapper.actions ]] || rpm -q python3-dnf-plugin-snapper &>/dev/null; then
+      pass "Snapshots automáticos pre/post transacción de DNF configurados"
+    else
+      warn "Snapshots pre/post DNF no configurados aún (opcional: 'make snapper')"
+    fi
+  else
+    warn "Snapper no instalado (opcional: 'make snapper')"
+  fi
+fi
+
 # 2.2 Podman y Distrobox
 if command -v podman &>/dev/null; then
   PODMAN_ROOTLESS="$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null || echo "unknown")"

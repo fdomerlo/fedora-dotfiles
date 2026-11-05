@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# host/snapper.sh - (Opcional) Snapshots Btrfs de / con Snapper y políticas conservadoras.
+# host/snapper.sh - (Opcional) Snapshots Btrfs de / con Snapper, retención conservadora
+# e integración automática pre/post transacción de DNF (DNF5 y DNF4).
 # Se ejecuta con `make snapper`; no forma parte de `make install`.
 set -euo pipefail
 
@@ -25,16 +26,29 @@ if [[ "$ROOT_FS" != "btrfs" ]]; then
   exit 0
 fi
 
-# 2. Instalar únicamente los paquetes ausentes
+# 2. Detectar versión de DNF (DNF5 en Fedora 41+ vs DNF4) e instalar paquetes faltantes
+IS_DNF5=0
+if command -v dnf5 &>/dev/null || dnf --version 2>/dev/null | head -1 | grep -q 'dnf5'; then
+  IS_DNF5=1
+fi
+
+REQUIRED_PACKAGES=(snapper btrfs-progs)
+if [[ $IS_DNF5 -eq 1 ]]; then
+  REQUIRED_PACKAGES+=(libdnf5-plugin-actions)
+else
+  REQUIRED_PACKAGES+=(python3-dnf-plugin-snapper)
+fi
+
 MISSING_PACKAGES=()
-for pkg in snapper btrfs-progs; do
+for pkg in "${REQUIRED_PACKAGES[@]}"; do
   rpm -q "$pkg" &>/dev/null || MISSING_PACKAGES+=("$pkg")
 done
+
 if [[ ${#MISSING_PACKAGES[@]} -gt 0 ]]; then
   echo "==> Instalando paquetes faltantes: ${MISSING_PACKAGES[*]}"
   sudo dnf install -y "${MISSING_PACKAGES[@]}"
 else
-  echo "==> Snapper ya está instalado."
+  echo "==> Paquetes de Snapper y plugin de DNF ya instalados."
 fi
 
 # 3. Crear la configuración 'root' solo si no existe
@@ -75,7 +89,29 @@ else
   echo "==> Políticas de retención de Snapper ya aplicadas."
 fi
 
-# 5. Habilitar timers de timeline y limpieza solo si no están activos
+# 5. Configurar snapshots automáticos pre/post transacción de DNF de forma idempotente
+if [[ $IS_DNF5 -eq 1 ]]; then
+  ACTIONS_DIR="/etc/dnf/libdnf5-plugins/actions.d"
+  ACTIONS_FILE="$ACTIONS_DIR/snapper.actions"
+  EXPECTED_ACTIONS='# Snapshots automáticos pre/post transacción de DNF5 con Snapper (config root)
+# Se asigna el algoritmo de limpieza "number" (-c number) para que NUMBER_LIMIT los depure.
+pre_transaction::::/usr/bin/sh -c echo\ "tmp.cmd=$(ps\ -o\ command\ --no-headers\ -p\ '\''${pid}'\'')"
+pre_transaction::::/usr/bin/sh -c echo\ "tmp.snapper_pre_number=$(snapper\ -c\ root\ create\ -c\ number\ -t\ pre\ -p\ -d\ '\''${tmp.cmd}'\'')"
+post_transaction::::/usr/bin/sh -c [\ -n\ "${tmp.snapper_pre_number}"\ ]\ &&\ snapper\ -c\ root\ create\ -c\ number\ -t\ post\ --pre-number\ "${tmp.snapper_pre_number}"\ -d\ "${tmp.cmd}"\ ;\ echo\ tmp.snapper_pre_number\ ;\ echo\ tmp.cmd'
+
+  if sudo test -f "$ACTIONS_FILE" && [[ "$(sudo cat "$ACTIONS_FILE" 2>/dev/null || true)" == "$EXPECTED_ACTIONS" ]]; then
+    echo "==> Integración DNF5 + Snapper ya configurada en $ACTIONS_FILE."
+  else
+    echo "==> Configurando snapshots pre/post transacción de DNF5 en $ACTIONS_FILE..."
+    sudo mkdir -p "$ACTIONS_DIR"
+    printf '%s\n' "$EXPECTED_ACTIONS" | sudo tee "$ACTIONS_FILE" >/dev/null
+    sudo chmod 0644 "$ACTIONS_FILE"
+  fi
+else
+  echo "==> Integración DNF4 + Snapper activa mediante python3-dnf-plugin-snapper."
+fi
+
+# 6. Habilitar timers de timeline y limpieza solo si no están activos
 for timer in snapper-timeline.timer snapper-cleanup.timer; do
   if systemctl is-enabled --quiet "$timer" 2>/dev/null && systemctl is-active --quiet "$timer" 2>/dev/null; then
     echo "==> $timer ya está habilitado."

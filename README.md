@@ -64,7 +64,7 @@ make snapper       # Snapshots Btrfs de / con Snapper
 |--------|-------------|
 | `make desktop` | Instala Fira Code y Noto Sans si faltan, configura las tipografías e instala/habilita las extensiones GNOME |
 | `make tooling` | Configura los repositorios oficiales e instala Visual Studio Code y Google Chrome; instala Zed con su instalador oficial |
-| `make snapper` | Configura Snapper para `/` (solo en Btrfs) con retención conservadora y sin cuotas Btrfs |
+| `make snapper` | Configura Snapper para `/` (solo en Btrfs) con retención conservadora, sin cuotas Btrfs y con snapshots automáticos pre/post transacción de DNF |
 
 ---
 
@@ -196,10 +196,10 @@ Puede ser necesario cerrar sesión para que GNOME Shell cargue extensiones nueva
 
 Solo actúa si `/` está en Btrfs. Crea la configuración `root` si no existe, aplica una retención conservadora (3 horarias, 3 diarias, 1 semanal, 6 por número, 2 importantes), no habilita cuotas Btrfs y activa `snapper-timeline.timer` y `snapper-cleanup.timer`.
 
+Además, integra **snapshots automáticos pre/post transacción de DNF**:
+- **DNF5 (Fedora 41+):** instala `libdnf5-plugin-actions` y escribe `/etc/dnf/libdnf5-plugins/actions.d/snapper.actions` con el algoritmo de limpieza `number` (`-c number`) para que `NUMBER_LIMIT` los depure automáticamente.
+- **DNF4:** instala `python3-dnf-plugin-snapper`.
+
 ```bash
 sudo snapper -c root list
-```
-
-> **Nota:** no se integran snapshots automáticos pre/post transacción de DNF.
-sudo btrfs subvolume delete /var/swap
 ```
