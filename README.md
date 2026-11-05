@@ -201,23 +201,5 @@ sudo snapper -c root list
 ```
 
 > **Nota:** no se integran snapshots automáticos pre/post transacción de DNF.
-
----
-
-## Migración desde la versión anterior
-
-Esta versión elimina `shell/gitconfig`, `host/swap.sh`, `boxes/python/` y los subcomandos `devctl box build|rebuild|export|import|upgrade`. Si `~/.gitconfig` era un enlace al repositorio, convertilo en un archivo normal **antes** de actualizar:
-
-```bash
-cp --remove-destination "$(readlink -f ~/.gitconfig)" ~/.gitconfig
-cd ~/.dotfiles && git pull
-```
-
-Si habías ejecutado el antiguo `host/swap.sh`, el swapfile y su configuración siguen activos; para retirarlos:
-
-```bash
-sudo swapoff /var/swap/swapfile
-sudo sed -i '\|/var/swap/swapfile|d' /etc/fstab
-sudo rm -f /etc/sysctl.d/99-zram-priority.conf
 sudo btrfs subvolume delete /var/swap
 ```
