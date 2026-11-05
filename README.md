@@ -8,10 +8,12 @@ Aprovisionamiento **simple, idempotente, seguro y reproducible** para una estaci
 
 ## Principios de diseño
 
-1. **Cero escrituras innecesarias en almacenamiento:** no se ejecutan `dnf upgrade`, `dnf autoremove`, `dnf clean all` ni `git pull` automáticos en cada aprovisionamiento; solo se instalan paquetes o herramientas ausentes.
-2. **Respeto por los valores predeterminados de Fedora:** se conserva la configuración nativa de **zRAM** (`zram-generator`) sin crear swapfiles de disco ni alterar parámetros `vm.*` de `sysctl`, y se mantiene **Podman rootless** con su driver y compresión Btrfs nativa (`zstd:1` y checksums activos) sin aplicar `chattr +C` ni cambios recursivos de permisos sobre `~/.local`.
-3. **Compatibilidad con servidores Debian mediante Distrobox:** se aprovisiona un contenedor persistente `debian-work` basado en la imagen oficial `docker.io/library/debian:13` ejecutado sobre Podman rootless.
-4. **Idempotencia y portabilidad:** todas las rutas se basan en `$HOME`, `PATH` se deduplica en Zsh (`typeset -U path PATH`) y se fija la versión estable disponible al momento de la primera instalación sin sobrescribir ni actualizar instalaciones existentes durante `make install`.
+1. **Cero escrituras innecesarias:** no se ejecutan `dnf upgrade`, `dnf autoremove`, `dnf clean all` ni `git pull` automáticos; solo se instalan paquetes o herramientas ausentes y solo se escriben configuraciones que difieren.
+2. **Respeto por los valores predeterminados de Fedora:** se conserva **zRAM** (`zram-generator`) sin swapfiles de disco ni cambios en `vm.*`, y **Podman rootless** con su almacenamiento nativo sobre Btrfs (`zstd:1` y checksums activos), sin `chattr +C`, sin `chown -R ~/.local` y sin `loginctl enable-linger`.
+3. **Compatibilidad con servidores Debian:** contenedor Distrobox persistente `debian-work` basado en la imagen oficial `docker.io/library/debian:13`.
+4. **Compatibilidad con Docker:** `podman-docker` (CLI `docker`), `podman-compose` y el socket rootless de Podman para herramientas que usan la API de Docker.
+5. **Sin datos personales versionados:** la identidad de Git se configura en la máquina (`make gitconfig`), no en el repositorio. Todas las rutas se basan en `$HOME` y `PATH` se deduplica en Zsh (`typeset -U path PATH`).
+6. **Ejecución como usuario normal:** ningún script se ejecuta con `sudo`; cada uno pide privilegios solo para el paso puntual que los necesita.
 
 ---
 
@@ -28,39 +30,52 @@ GIT_USER_NAME="Tu Nombre" GIT_USER_EMAIL="tu@email" make install
 
 Si no definís `GIT_USER_NAME` / `GIT_USER_EMAIL`, `make install` pregunta la identidad de Git de forma interactiva (o la omite con una advertencia si no hay terminal). Nunca sobrescribe valores ya configurados.
 
-Para autenticar GitHub CLI de forma interactiva (paso separado que no bloquea `make install`):
+Pasos posteriores (separados para no bloquear `make install`):
 
 ```bash
-make github-auth
+make github-auth   # Inicia sesión en GitHub CLI (SSH)
+make verify        # Valida el repositorio y diagnostica la estación
 ```
 
-Para verificar la estación de trabajo y validar el repositorio:
+Pasos opcionales:
 
 ```bash
-make verify
+make desktop       # Fuentes y extensiones GNOME
+make tooling       # VS Code, Google Chrome y Zed
+make snapper       # Snapshots Btrfs de / con Snapper
 ```
 
 ---
 
 ## Targets del Makefile
 
+### Flujo principal (`make install`)
+
 | Target | Descripción |
 |--------|-------------|
-| `make help` | Muestra la ayuda con los targets disponibles |
-| `make install` | Aprovisiona la workstation completa (`host` + `shell` + `containers` + `devtools` + `devai`) |
-| `make host` | Verifica Fedora, Btrfs, zRAM y Podman rootless; instala únicamente los paquetes base faltantes (incluye `podman-compose` y `podman-docker`) y habilita el socket rootless de Podman |
-| `make shell` | Instala y configura Zsh, Oh My Zsh, `zsh-autosuggestions`, `zsh-syntax-highlighting` y enlaza `~/.zshrc` |
-| `make containers` | Instala `devctl` en `~/.local/bin` y crea el contenedor Distrobox persistente `debian-work` (Debian 13) si no existe |
-| `make devtools` | Instala `uv`, `fnm`, SDKMAN, configura GitHub CLI (`gh`) con protocolo SSH y la identidad global de Git |
-| `make devai` | Instala OpenCode CLI, Antigravity CLI y (opcionalmente) Antigravity desktop si existe el paquete local |
-| `make gitconfig` | Configura `user.name` / `user.email` globales si faltan (desde `GIT_USER_NAME` / `GIT_USER_EMAIL` o de forma interactiva) |
-| `make github-auth` | Ejecuta el flujo interactivo oficial `gh auth login -h github.com -p ssh` |
-| `make verify` | Ejecuta validaciones estáticas (`bash -n`, referencias, portabilidad) y diagnóstico no destructivo del entorno |
-| `make desktop` | *(Opcional)* Instala fuentes faltantes (Fira Code, Noto Sans), las aplica y configura extensiones GNOME |
-| `make tooling` | *(Opcional)* Instala VS Code, Zed y navegador |
-| `make snapper` | *(Opcional)* Configura Snapper para `/` (solo en Btrfs) con retención conservadora y sin cuotas Btrfs |
+| `make install` | Ejecuta `host` → `shell` → `containers` → `devtools` → `devai` |
+| `make host` | Verifica Fedora, Btrfs, zRAM y Podman rootless; instala los paquetes base faltantes (`git`, `curl`, `wget`, `jq`, `zip`, `unzip`, `podman`, `podman-compose`, `podman-docker`, `distrobox` y `btrfs-progs` si corresponde) y habilita el socket rootless de Podman |
+| `make shell` | Instala Zsh, Oh My Zsh, `zsh-autosuggestions` y `zsh-syntax-highlighting`; enlaza `~/.zshrc` (respalda el previo en `~/.zshrc.pre-dotfiles`) |
+| `make containers` | Enlaza `devctl` en `~/.local/bin` y crea `debian-work` (Debian 13) si no existe |
+| `make devtools` | Instala `uv`, `fnm` y SDKMAN; prepara GitHub CLI (`git_protocol=ssh`) y la identidad global de Git |
+| `make devai` | Instala OpenCode CLI y Antigravity CLI si faltan; despliega Antigravity desktop si hay un paquete local |
 
-> **Nota:** `make install` no ejecuta actualizaciones masivas del sistema (`dnf upgrade`), limpiezas de caché (`dnf autoremove` / `dnf clean all`) ni creación de swapfiles. Snapper y la personalización de GNOME quedan como pasos opcionales (`make snapper`, `make desktop`).
+### Utilidades
+
+| Target | Descripción |
+|--------|-------------|
+| `make help` | Muestra la ayuda |
+| `make gitconfig` | Configura `user.name` / `user.email` y `init.defaultBranch=main` si faltan |
+| `make github-auth` | Ejecuta `gh auth login -h github.com -p ssh` si no hay sesión activa |
+| `make verify` | Validación estática (`bash -n`, `zsh -n`, ShellCheck si está instalado, datos personales, comandos prohibidos) y diagnóstico no destructivo del entorno |
+
+### Opcionales (fuera de `make install`)
+
+| Target | Descripción |
+|--------|-------------|
+| `make desktop` | Instala Fira Code y Noto Sans si faltan, configura las tipografías e instala/habilita las extensiones GNOME |
+| `make tooling` | Configura los repositorios oficiales e instala Visual Studio Code y Google Chrome; instala Zed con su instalador oficial |
+| `make snapper` | Configura Snapper para `/` (solo en Btrfs) con retención conservadora y sin cuotas Btrfs |
 
 ---
 
@@ -68,87 +83,152 @@ make verify
 
 ```text
 host/
-├── setup.sh              # Verificación de Fedora, Btrfs, zRAM, Podman rootless y paquetes base
-└── snapper.sh            # Opcional (make snapper): snapshots Btrfs de / con retención conservadora
+├── setup.sh              # Fedora, Btrfs, zRAM, Podman rootless, paquetes base y socket de Podman
+└── snapper.sh            # Opcional (make snapper): snapshots Btrfs de /
 
 boxes/
-└── debian-work.sh        # Creación idempotente del entorno Distrobox persistente 'debian-work' (Debian 13)
+└── debian-work.sh        # Creación idempotente del Distrobox 'debian-work' (Debian 13)
 
 shell/
-├── zshrc                 # Configuración portable de Zsh, Oh My Zsh, PATH deduplicado y toolchains
-└── devctl                # Utilidad CLI para contenedores Distrobox, diagnóstico y plantillas
+├── zshrc                 # Zsh + Oh My Zsh, PATH deduplicado, fnm, SDKMAN y prompt con indicador de contenedor
+└── devctl                # CLI para Distrobox, plantillas de proyecto y diagnóstico
 
 scripts/
-├── ohmyzsh.sh            # Instalación idempotente de Zsh, Oh My Zsh y plugins
-├── devtools.sh           # Instalación idempotente de uv, fnm y SDKMAN
-├── setup_git.sh          # Identidad global de Git (user.name / user.email) sin datos versionados
-├── setup_gh.sh           # Preparación de GitHub CLI (SSH) y autenticación interactiva separada
-├── devai.sh              # Instalación idempotente de OpenCode CLI y Antigravity CLI
-├── setup_agy.sh          # Despliegue local seguro (staging + validación) de Antigravity desktop en /opt
-├── verify.sh             # Validación estática del repositorio y diagnóstico del sistema
+├── ohmyzsh.sh            # Zsh, Oh My Zsh, plugins y enlace de ~/.zshrc
+├── devtools.sh           # uv, fnm y SDKMAN
+├── setup_gh.sh           # GitHub CLI (SSH) y autenticación interactiva (--auth)
+├── setup_git.sh          # Identidad global de Git sin datos versionados
+├── devai.sh              # OpenCode CLI y Antigravity CLI
+├── setup_agy.sh          # Despliegue seguro de Antigravity desktop en /opt
+├── verify.sh             # Validación del repositorio y diagnóstico del sistema
 ├── desktop.sh            # Opcional (make desktop): fuentes y extensiones GNOME
-└── tooling.sh            # Opcional (make tooling): editores y navegador
+├── tooling.sh            # Opcional (make tooling): VS Code, Google Chrome y Zed
+└── antigravity.png       # Ícono de la entrada de escritorio de Antigravity
 
 templates/django/
 └── manage.sh             # Inicializador de proyectos Django con uv
 
-.envrc.template           # Plantilla direnv para entornos virtuales Python
-Makefile                  # Orquestación principal del aprovisionamiento
+.envrc.template           # Plantilla direnv que activa el .venv creado por uv
+.gitattributes            # Fuerza finales de línea LF
+Makefile                  # Orquestación del aprovisionamiento
 ```
 
 ---
 
-## Uso de Distrobox (`debian-work`)
+## Contenedores
 
-El contenedor `debian-work` utiliza la imagen oficial de Debian estable (`docker.io/library/debian:13`) sobre Podman rootless y comparte el directorio `$HOME` del usuario, permitiendo acceder a los repositorios de trabajo y a los toolchains administrados en el host sin duplicarlos dentro del contenedor.
+### Distrobox `debian-work`
 
-### Listar contenedores Distrobox
+Usa la imagen oficial `docker.io/library/debian:13` sobre Podman rootless y comparte `$HOME`, de modo que los repositorios y toolchains del host están disponibles sin duplicarlos.
 
 ```bash
 distrobox list
-```
-
-### Ingresar al entorno Debian
-
-```bash
 distrobox enter debian-work
 ```
 
-### Actualizar el entorno Debian manualmente
-
-`make install` nunca destruye, recrea ni actualiza automáticamente `debian-work`. Cuando desees actualizar los paquetes internos del contenedor Debian de forma explícita:
+`make install` nunca destruye, recrea ni actualiza `debian-work`. Para actualizarlo explícitamente:
 
 ```bash
 distrobox upgrade debian-work
-# o desde dentro del contenedor:
-distrobox enter debian-work -- sudo apt update && sudo apt upgrade -y
+```
+
+### Compatibilidad con Docker
+
+- `podman-docker` provee el comando `docker` (redirige a Podman).
+- `podman-compose` ejecuta archivos `compose.yaml` / `docker-compose.yml`.
+- El socket rootless (`systemctl --user` → `podman.socket`) se activa por demanda. Para herramientas que lo requieren:
+
+```bash
+export DOCKER_HOST="unix://${XDG_RUNTIME_DIR}/podman/podman.sock"
+```
+
+> **Nota:** `podman-docker` entra en conflicto con Docker CE (`docker-ce` / `moby-engine`); no instales ambos.
+
+---
+
+## CLI `devctl`
+
+Se enlaza en `~/.local/bin/devctl` con `make containers`.
+
+```bash
+devctl box create [nombre]     # Crea el Distrobox (por defecto: debian-work) si no existe
+devctl box enter [nombre]      # Ingresa al Distrobox
+devctl box list                # Lista los Distrobox
+devctl project init django     # Copia la plantilla Django en ./app y .envrc (sin sobrescribir archivos)
+devctl doctor                  # Ejecuta scripts/verify.sh
+```
+
+### Plantilla Django
+
+```bash
+mkdir mi-proyecto && cd mi-proyecto
+devctl project init django
+cd app && ./manage.sh          # uv venv + django + startproject + migrate
+cd .. && direnv allow          # Opcional: activa el .venv automáticamente
 ```
 
 ---
 
-## Toolchains y Runtimes
+## Toolchains y runtimes
 
-Los gestores de versiones se instalan en su versión estable disponible al momento del primer aprovisionamiento y quedan integrados en `shell/zshrc`:
+Los gestores se instalan una sola vez (versión estable vigente) y se integran en `shell/zshrc` sin que sus instaladores modifiquen `~/.zshrc`:
 
-- **Python (`uv`):** `uv python install <version>` / `uv venv`
-- **Node.js (`fnm`):** `fnm install --lts` / `fnm use --lts`
-- **Java / JVM (`SDKMAN`):** `sdk list java` / `sdk install java <identifier>`
+- **Python (`uv`):** `uv python install <versión>` / `uv venv`
+- **Node.js (`fnm`):** `fnm install --lts` / `fnm use --lts` (cambio automático por directorio con `--use-on-cd`)
+- **Java / JVM (`SDKMAN`):** `sdk list java` / `sdk install java <identificador>`
 
 ---
 
 ## Herramientas de IA
 
-- **OpenCode CLI** y **Antigravity CLI** se instalan únicamente si no están presentes en el sistema.
-- **Antigravity Desktop (`scripts/setup_agy.sh`):** componente opcional. Si `~/Descargas/Antigravity.tar.gz` (o `~/Downloads/Antigravity.tar.gz`) está presente, valida la integridad del archivo, extrae en un directorio temporal en `/opt`, verifica el binario ejecutable y realiza un reemplazo controlado en `/opt/Antigravity-x64` sin eliminar el archivo descargado por el usuario. Si el archivo no existe, `make install` continúa sin bloquearse.
+- **OpenCode CLI** y **Antigravity CLI** se instalan solo si no están presentes. Si un instalador intenta agregar rutas a `~/.zshrc`, el cambio se revierte (el `PATH` ya está gestionado en `shell/zshrc`).
+- **Antigravity desktop (`scripts/setup_agy.sh`)** es opcional. Si existe `~/Descargas/Antigravity.tar.gz` (o `~/Downloads/Antigravity.tar.gz`), valida el archivo, lo extrae en un directorio temporal, verifica el binario y reemplaza `/opt/Antigravity-x64` conservando un respaldo hasta completar el reemplazo. No borra el archivo descargado. Si no hay paquete, `make install` continúa.
 
 ---
 
-## GitHub CLI (`gh`)
+## Git y GitHub CLI
 
-Durante `make install`, `scripts/setup_gh.sh` verifica que `gh` esté instalado, configura `git_protocol=ssh` y comprueba el estado de la sesión sin generar claves SSH automáticamente, sin desactivar `StrictHostKeyChecking` y sin sobrescribir `user.name` o `user.email` en la configuración global de Git (la identidad se gestiona en `scripts/setup_git.sh`, que solo completa valores ausentes).
+- `scripts/setup_git.sh` completa `user.name`, `user.email` e `init.defaultBranch` solo si faltan.
+- `scripts/setup_gh.sh` instala `gh` si falta y configura `git_protocol=ssh`. No genera claves SSH, no desactiva `StrictHostKeyChecking` y no modifica la identidad de Git.
+- `make github-auth` inicia el flujo oficial de login; `gh` ofrece generar y subir una clave SSH durante ese proceso.
 
-Para iniciar sesión cuando sea necesario:
+---
+
+## Escritorio GNOME (`make desktop`)
+
+- **Tipografías:** interfaz Adwaita Sans 11, documentos Noto Sans 12, monoespaciada Fira Code 11 (las fuentes se instalan si faltan).
+- **Extensiones:** Alphabetical App Grid, Vitals, Dash to Dock y Tiling Shell. Se instalan desde extensions.gnome.org si no están presentes y se habilitan; Pop Shell se deshabilita para evitar conflictos de tiling.
+
+Puede ser necesario cerrar sesión para que GNOME Shell cargue extensiones nuevas.
+
+---
+
+## Snapper (`make snapper`)
+
+Solo actúa si `/` está en Btrfs. Crea la configuración `root` si no existe, aplica una retención conservadora (3 horarias, 3 diarias, 1 semanal, 6 por número, 2 importantes), no habilita cuotas Btrfs y activa `snapper-timeline.timer` y `snapper-cleanup.timer`.
 
 ```bash
-make github-auth
+sudo snapper -c root list
+```
+
+> **Nota:** no se integran snapshots automáticos pre/post transacción de DNF.
+
+---
+
+## Migración desde la versión anterior
+
+Esta versión elimina `shell/gitconfig`, `host/swap.sh`, `boxes/python/` y los subcomandos `devctl box build|rebuild|export|import|upgrade`. Si `~/.gitconfig` era un enlace al repositorio, convertilo en un archivo normal **antes** de actualizar:
+
+```bash
+cp --remove-destination "$(readlink -f ~/.gitconfig)" ~/.gitconfig
+cd ~/.dotfiles && git pull
+```
+
+Si habías ejecutado el antiguo `host/swap.sh`, el swapfile y su configuración siguen activos; para retirarlos:
+
+```bash
+sudo swapoff /var/swap/swapfile
+sudo sed -i '\|/var/swap/swapfile|d' /etc/fstab
+sudo rm -f /etc/sysctl.d/99-zram-priority.conf
+sudo btrfs subvolume delete /var/swap
 ```

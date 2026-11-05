@@ -1,0 +1,3 @@
+# Forzar finales de línea LF (los scripts y el Makefile fallan o se comportan mal con CRLF)
+* text=auto eol=lf
+*.png binary
